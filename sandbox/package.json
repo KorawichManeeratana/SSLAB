@@ -1,0 +1,8 @@
+{
+  "name": "sslab-runner",
+  "private": true,
+  "description": "SSLAB sandbox runner image - Node + Express + test harness",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

@@ -1,0 +1,23 @@
+[
+  {
+    "name": "ดึงรายการหนังสือทั้งหมด",
+    "method": "GET",
+    "path": "/books",
+    "expectStatus": 200,
+    "expectHeaders": { "content-type": "application/json" }
+  },
+  {
+    "name": "ดึงหนังสือตาม id ที่มีอยู่",
+    "method": "GET",
+    "path": "/books/1",
+    "expectStatus": 200,
+    "expectBody": { "id": 1, "title": "Node.js Basics" }
+  },
+  {
+    "name": "id ที่ไม่มีต้องตอบ 404 พร้อม error message",
+    "method": "GET",
+    "path": "/books/999",
+    "expectStatus": 404,
+    "expectBody": { "error": "not found" }
+  }
+]

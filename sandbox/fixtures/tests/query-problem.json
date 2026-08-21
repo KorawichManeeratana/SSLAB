@@ -1,0 +1,7 @@
+{
+  "name": "หาหนังสือราคาต่ำกว่า 500 ที่ยังมี stock เรียงตามราคาน้อยไปมาก",
+  "schema": "CREATE TABLE book (id INTEGER PRIMARY KEY, title TEXT, price INTEGER, stock INTEGER);",
+  "seed": "INSERT INTO book VALUES (1,'AAAA',350,5),(2,'EEEE',450,0),(3,'ABACADABA',600,3),(4,'YAY',200,10),(5,'YEP',480,2);",
+  "solution": "SELECT id, title, price FROM book WHERE price < 500 AND stock > 0 ORDER BY price ASC",
+  "orderMatters": true
+}

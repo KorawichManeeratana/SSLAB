@@ -1,0 +1,10 @@
+{
+  "name": "sslab",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev:web": "npm run dev -w @sslab/web",
+    "dev:worker": "npm run dev -w @sslab/worker",
+    "db:studio": "npm run studio -w @sslab/db"
+  }
+}

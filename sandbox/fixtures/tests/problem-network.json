@@ -1,0 +1,9 @@
+[
+  {
+    "name": "โค้ดที่แอบต่อเน็ตต้องถูกบล็อก (คาดหวัง 500 + network blocked)",
+    "method": "GET",
+    "path": "/books",
+    "expectStatus": 500,
+    "expectBody": { "error": "network blocked" }
+  }
+]
