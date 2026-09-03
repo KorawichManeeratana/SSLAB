@@ -29,6 +29,10 @@ export function Header() {
                     <LangToggle />
                     <ThemeToggle />
 
+                    <Link href="/" className="text-xs btn-cyber px-6 py-2">
+                        Login_
+                    </Link>
+
                     <div className="user-chip flex items-center space-x-3 border border-ink/10 px-3 py-2 rounded-sm">
                         <div className="w-8 h-8 bg-primary/10 border border-primary/20 flex items-center justify-center font-bold text-primary">
                             B
