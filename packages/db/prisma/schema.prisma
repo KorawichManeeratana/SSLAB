@@ -1,7 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// This is your Prisma schema file
 
 generator client {
   provider = "prisma-client"
@@ -10,4 +7,199 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
+
+
+enum Role {
+  student
+  teacher
+  ta
+  admin
+}
+
+enum Status {
+  available
+  unavailable
+}
+
+enum Level {
+  novice
+  adept
+  expert
+}
+
+enum ExerciseType {
+  practice
+  exam
+}
+
+enum ExerciseStatus {
+  complete
+  ongoing
+  uncomplete
+}
+
+enum EnrollStatus {
+  active
+  unactive
+}
+
+
+model Faculty {
+  id       Int    @id @default(autoincrement())
+  fac_name String
+
+  users Users[]
+}
+
+
+model Users {
+  id            Int      @id @default(autoincrement())
+  first_name    String
+  last_name     String
+  student_code  String
+  password      String
+  role          Role     @default(student)
+  profile_image String?
+  user_status   Status   @default(available)
+  created_at    DateTime @default(now())
+
+  fac_id Int?
+  faculty       Faculty? @relation(fields: [fac_id],references: [id])
+
+  enrolls Enrolls[]
+  exercises Exercises[]
+  userExercise user_exercise[]
+
+}
+
+
+model Courses {
+  id            Int      @id @default(autoincrement())
+  course_name   String
+  course_status Status   @default(available)
+  created_at    DateTime @default(now())
+
+  enrolls Enrolls[]
+  lectures Lectures[]
+}
+
+model Enrolls {
+  id            Int          @id @default(autoincrement())
+  created_at    DateTime     @default(now())
+  enroll_status EnrollStatus @default(active)
+
+  user_id   Int 
+  
+  user Users @relation(fields: [user_id],references: [id])
+
+  course_id Int
+  course Courses @relation(fields: [course_id],references: [id])
+
+  @@unique([user_id, course_id])
+}
+
+
+model Exercises {
+  id             Int    @id @default(autoincrement())
+  exc_name       String
+  exc_difficulty Level  @default(novice)
+
+  exc_schema   String
+  exc_seed     String
+  exc_solution String
+
+  order_matters Boolean @default(false)
+
+  exc_status       Status  @default(unavailable)
+  exc_description  String?
+  exc_anwser_field String?
+
+  exc_update DateTime @updatedAt
+
+  exc_type ExerciseType @default(practice)
+
+  lecture_id Int
+
+  lecture Lectures @relation(fields: [lecture_id],references: [id])
+
+  author_id Int
+
+  author Users @relation(fields: [author_id],references: [id])
+
+  testcases Testcase[]
+  userExercise user_exercise[]
+}
+
+
+model Testcase {
+  id         Int      @id @default(autoincrement())
+  case_name  String
+  created_at DateTime @default(now())
+
+  exercise_id Int
+
+  exercise Exercises @relation(fields: [exercise_id],references: [id])
+}
+
+model user_exercise {
+  id     Int            @id @default(autoincrement())
+  score  Int
+  status ExerciseStatus @default(uncomplete)
+
+  created_at DateTime @default(now())
+  update     DateTime @updatedAt
+
+  user_id     Int
+
+  user Users @relation(fields: [user_id],references: [id])
+
+  exercise_id Int
+
+  exercise Exercises @relation(fields: [exercise_id],references: [id])
+}
+
+
+model Lectures {
+  id           Int      @id @default(autoincrement())
+  lecture_name String
+  lecture_week String
+  created_at   DateTime @default(now())
+  update       DateTime @updatedAt
+
+  course_id Int
+
+  course Courses @relation(fields: [course_id],references: [id])
+
+  exercises Exercises[]
+  files     Files[]
+}
+
+
+model Files {
+  id         Int      @id @default(autoincrement())
+  file_name  String
+  file_size  Int
+  created_at DateTime @default(now())
+  status     Status   @default(available)
+
+  lecture_id Int
+  lecture Lectures @relation(fields: [lecture_id],references: [id])
+}
+
+// Table log_exc_history {
+//   log_exc_history_id int [pk, increment]
+//   created_at datetime [default: `CURRENT_TIMESTAMP`]
+//   user_exercise_id int [ref: > user_exercise.user_exercise_id]
+// }
+// Table log_exercise_create {
+//   log_exercise_create_id int [pk,  increment]
+//   created_at datetime [default: `CURRENT_TIMESTAMP`]
+//   author_id int [ref: > Exercises.author_id]
+// }
+// Table log_enroll {
+//   log_enroll int [pk,  increment]
+//   created_at datetime [default: `CURRENT_TIMESTAMP`]
+//   enroll_id int [ref: > Enrolls.enroll_id]
+// }

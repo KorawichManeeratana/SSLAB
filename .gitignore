@@ -20,7 +20,9 @@ Thumbs.db
 .claude/
 .windsurf/
 .agents/
+.cursor
+.devin
 skills-lock.json
-
+.gitignore
 /generated
 prisma/generated
