@@ -1,4 +1,4 @@
-import { Course, CourseRepository } from "../repositories/CourseRepository";
+import { Course, CourseRepository, CreateCourse } from "../repositories/CourseRepository";
 
 export class CourseService {
     private courseRepository: CourseRepository;
@@ -14,5 +14,11 @@ export class CourseService {
             throw new Error('course not found')
         }
         return course
+    }
+    async createCourse(input: CreateCourse) {
+        return await this.courseRepository.createCourse({
+            creator_id: input.creator_id,
+            course_name: input.course_name
+        })
     }
 }

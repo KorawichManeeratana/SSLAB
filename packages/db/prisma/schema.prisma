@@ -71,6 +71,7 @@ model Users {
   enrolls Enrolls[]
   exercises Exercises[]
   userExercise user_exercise[]
+  course Courses[]
 
 }
 
@@ -80,6 +81,8 @@ model Courses {
   course_name   String
   course_status Status   @default(available)
   created_at    DateTime @default(now())
+  creator_id Int
+  user Users @relation(fields: [creator_id],references: [id])
 
   enrolls Enrolls[]
   lectures Lectures[]
@@ -151,6 +154,12 @@ model user_exercise {
   created_at DateTime @default(now())
   update     DateTime @updatedAt
 
+  code String?
+  result String?
+  graded_at DateTime @default(now())
+  ai_feedback String
+  attempt_number Int
+  exec_time Int
   user_id     Int
 
   user Users @relation(fields: [user_id],references: [id])

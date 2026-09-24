@@ -5,6 +5,10 @@ export interface Course {
     id: number;
     course_name: string;
 }
+export interface CreateCourse {
+    creator_id: number;
+    course_name: string;
+}
 
 export class CourseRepository {
     async findById(id: number): Promise<Course | null> {
@@ -23,5 +27,13 @@ export class CourseRepository {
             id: course.id,
             course_name: course.course_name,
         };
+    }
+    async createCourse(input: CreateCourse) {
+        return await prisma.courses.create({
+            data: {
+                creator_id: input.creator_id,
+                course_name: input.course_name
+            }
+        })
     }
 }
