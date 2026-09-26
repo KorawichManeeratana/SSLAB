@@ -34,7 +34,7 @@ function buildDb(problem) {
 // เทียบผลลัพธ์ของ นศ. กับเฉลย
 function compareResults(expected, actual, orderMatters) {
   if (!Array.isArray(actual))
-    return { pass: false, reason: "Actual must be an array" };
+    return { pass: false, reason: "solve(db) ต้องคืนค่าเป็น array" };
 
   if (expected.length !== actual.length)
     return {
@@ -42,31 +42,28 @@ function compareResults(expected, actual, orderMatters) {
       reason: `Expected ${expected.length} rows but got ${actual.length}`,
     };
 
-  //normalize มันให้มันเทียบง่ายขึ้น (sort keys ของ object แต่ละ row) แล้วแปลงเป็น string
   const norm = (row) =>
     JSON.stringify(
       Object.keys(row)
         .sort()
         .reduce((o, k) => ((o[k] = row[k]), o), {}),
     );
+
   let exp = expected.map(norm);
   let act = actual.map(norm);
 
-  console.log("Expected:", exp);
-  console.log("Actual:", act);
-
-  // เทียบแบบไม่สนใจลำดับ
+  // ไม่สนลำดับ → sort ทั้งสองฝั่งก่อนเทียบ
   if (!orderMatters) {
-    expectedRows = exp.slice().sort();
+    exp = exp.slice().sort();
     act = act.slice().sort();
   }
 
-  // ลูปเทียบ
+  // เทียบทีละแถว (ใช้ทั้งสองกรณี)
   for (let i = 0; i < exp.length; i++) {
     if (exp[i] !== act[i]) {
       return {
         pass: false,
-        reason: `Row ${i + 1} Mismatch (Ans: ${exp[i]} / Got: ${act[i]})`,
+        reason: `Row ${i + 1} mismatch (Ans: ${exp[i]} / Got: ${act[i]})`,
       };
     }
   }
@@ -95,7 +92,6 @@ async function main() {
     let tempsolution = buildDb(problem);
     solution = tempsolution.prepare(problem.solution).all();
 
-    console.log("Solution in main:", JSON.stringify(solution, null, 2));
     tempsolution.close();
   } catch (err) {
     return report({

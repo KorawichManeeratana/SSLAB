@@ -17,11 +17,12 @@ REM เลือกไฟล์ harness และ path ของไฟล์น�
 if /i "%ENGINE%"=="http" (
   set HARNESS=harness/run-tests.js
   set DEST=/app/student/app.js
-  set STUDENT_IN=student/app.js
+  set STUDENT_IN=fixtures/student/app.js
   set PROBLEM_IN=tests/problem1.json
   set PROBLEM_DEST=/app/tests/problem1.json
 ) else if /i "%ENGINE%"=="query" (
   set HARNESS=harness/run-query.js
+  set STUDENT=fixtures/student/query-wrong.js
   set DEST=/app/student/query.js
   set STUDENT_IN=student/query.js
   set PROBLEM_IN=tests/query-problem.json
@@ -42,9 +43,9 @@ docker run --rm ^
   --read-only --tmpfs /tmp ^
   --security-opt no-new-privileges ^
   -v "%cd%\%STUDENT%:%DEST%:ro" ^
-  -v "%cd%\%TESTFILE%:%PROBLEM_DEST%:ro" ^
+  -v "%cd%\fixtures\tests:/app/tests:ro" ^
   sslab-runner ^
-  timeout -s KILL %TIMEOUT_SEC% node %HARNESS% %STUDENT_IN% %PROBLEM_IN%
+  timeout -s KILL %TIMEOUT_SEC% node --disable-warning=ExperimentalWarning %HARNESS% %STUDENT_IN% %PROBLEM_IN%
 
 set EXITCODE=%ERRORLEVEL%
 echo.
