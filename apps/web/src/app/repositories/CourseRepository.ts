@@ -11,6 +11,16 @@ export interface CreateCourse {
 }
 
 export class CourseRepository {
+    async findCourse(){
+        const course = await prisma.courses.findMany()
+        if(!course){
+            return null;
+        }
+        return {
+            data: course,
+            status: 200,
+        };
+    }
     async findById(id: number): Promise<Course | null> {
 
         const course = await prisma.courses.findUnique({
