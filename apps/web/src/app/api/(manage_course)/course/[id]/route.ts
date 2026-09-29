@@ -1,44 +1,23 @@
 import { CourseRepository } from "@/app/repositories/CourseRepository";
+import { LectureRepository } from "@/app/repositories/LectureRepository";
 import { CourseService } from "@/app/services/CourseService"
 import { NextRequest, NextResponse } from 'next/server';
 
+const courseRepository = new CourseRepository();
+const lectureRepository = new LectureRepository();
+const courseService = new CourseService(courseRepository, lectureRepository)
 type Context = {
-    params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>;
 };
 
 export async function GET(req: NextRequest, context: Context) {
-    const { id } = await context.params;
-    console.log("In router now");
-    console.log("DATABASE_URL:", process.env.DATABASE_URL);
-    try {
-        const courseRepository = new CourseRepository();
-        const courseService = new CourseService(courseRepository) 
+  const { id } = await context.params;
+  try {
+    const course = await courseService.getCourseById(Number(id))
 
-
-        const course = await courseService.getCourse(Number(id))
-
-        return NextResponse.json(course)
-    } catch (err) {
-        console.log("Error : ", err)
-        return NextResponse.json({ error: "Error Mayber" },{ status: 500 })
-    }
-}
-
-export async function POST(req:NextRequest) {
-
-    try {
-    const formData = await req.formData();
-    
-    const course_name = formData.get('course_name') as string | null;
-
-    if (!course_name) {
-      return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
-    }
-
-    console.log(`itemsis : ${course_name}`);
-
-    return NextResponse.json({ success: true, data: course_name });
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to process form' }, { status: 500 });
+    return NextResponse.json(course)
+  } catch (err) {
+    console.log("Error : ", err)
+    return NextResponse.json({ error: "Error Mayber" }, { status: 500 })
   }
 }
