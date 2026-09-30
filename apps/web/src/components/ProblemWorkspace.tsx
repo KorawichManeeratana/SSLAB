@@ -1,6 +1,7 @@
 "use client"
 import { CodeEditor } from "@/components/CodeEditor";
 import { useState } from "react";
+import { ResultPanel } from "./ResultPanel";
 
 type Props = {
     exerciseId: number
@@ -11,23 +12,23 @@ type Props = {
 export default function ProblemWorkspace({ exerciseId, starterCode }: Props) {
     const [code, setCode] = useState(starterCode ?? '')
     const [result, setResult] = useState<any>(null)
-    const [running, setRunning] = useState(false)
+    const [running, setRunning] = useState<null | 'run' | 'submit'>(null)
 
 
-    async function handleRun() {
-        setRunning(true)
+    async function send(kind: 'run' | 'submit') {
+        setRunning(kind)
         setResult(null)
         try {
-            const res = await fetch(`/api/problems/${exerciseId}/run`, {
+            const res = await fetch(`/api/problems/${exerciseId}/${kind}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ code }),
             })
             setResult(await res.json())
         } catch {
-            setResult({ ok: false, systemError: 'เชื่อมต่อ server ไม่ได้' })
+            setResult({ error: 'เชื่อมต่อ server ไม่ได้' })
         } finally {
-            setRunning(false)
+            setRunning(null)
         }
     }
 
@@ -43,8 +44,11 @@ export default function ProblemWorkspace({ exerciseId, starterCode }: Props) {
                         </h2>
                         <div className="flex items-center gap-3">
                             <span className="hidden md:inline font-mono text-[10px] uppercase tracking-[0.18em] text-muted/70">server restarts on run</span>
-                            <button className="run-button" onClick={handleRun} disabled={running}>
+                            <button className="run-button" onClick={() => send('run')} disabled={running !== null}>
                                 {running ? 'RUNNING...' : <>&#9656; RUN_QUERY</>}
+                            </button>
+                            <button className="run-button" onClick={() => send('submit')} disabled={running !== null}>
+                                {running === 'submit' ? 'SUBMITTING...' : 'SUBMIT'}
                             </button>
                         </div>
                     </div>
@@ -55,7 +59,7 @@ export default function ProblemWorkspace({ exerciseId, starterCode }: Props) {
                         </span>
                     </div>
 
-                    <div className="h-[500px]">
+                    <div className="flex-1 min-h-0">
                         <CodeEditor value={code} onChange={setCode} />
                     </div>
 
@@ -84,12 +88,7 @@ export default function ProblemWorkspace({ exerciseId, starterCode }: Props) {
                     <h2 className="panel-title">Result</h2>
                 </div>
                 <div className="panel-content">
-                    {running && <p className="text-muted">กำลังตรวจ...</p>}
-                    {result && (
-                        <pre className="font-mono text-xs whitespace-pre-wrap text-ink">
-                            {JSON.stringify(result, null, 2)}
-                        </pre>
-                    )}
+                    <ResultPanel data={result} running={running} />
                 </div>
             </section>
         </>

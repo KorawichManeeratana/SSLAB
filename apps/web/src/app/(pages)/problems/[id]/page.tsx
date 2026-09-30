@@ -2,6 +2,11 @@ import { notFound } from 'next/navigation'
 import { getExerciseById } from '../../../repositories/exercise.repository'
 import ProblemWorkspace from '@/components/ProblemWorkspace'
 import { Header } from "@/components/header";
+import { getCurrentUserId } from '@/lib/current-user';
+import { getLatestCode } from '@/app/repositories/submission.repository';
+import { getExerciseForGrading } from '../../../repositories/exercise.repository';
+import { computeExpectedOutput } from '../../../services/expectedOutput.services';
+
 
 
 export default async function ProblemPage({
@@ -15,6 +20,19 @@ export default async function ProblemPage({
 
     const exercise = await getExerciseById(exerciseId)
     if (!exercise) notFound()
+
+    const userId = await getCurrentUserId()
+    const latestCode = await getLatestCode(userId, exercise.id)
+
+    const grading = await getExerciseForGrading(exercise.id)
+    let expectedOutput: unknown[] | null = null
+    try {
+        expectedOutput = grading
+            ? computeExpectedOutput(grading.exc_schema, grading.exc_seed, grading.exc_solution)
+            : null
+    } catch {
+        expectedOutput = null   // ถ้าเฉลยพัง หน้าโจทย์ยังต้องเปิดได้
+    }
 
     return <div>
         <Header />
@@ -42,12 +60,12 @@ export default async function ProblemPage({
                         {exercise.exc_description}
                     </p>
                     <div className="space-y-3">
-                        <h4 className="font-mono text-sm uppercase tracking-widest text-accent-cyan">Objective 1: API Behaviour</h4>
+                        {/* <h4 className="font-mono text-sm uppercase tracking-widest text-accent-cyan">Objective 1: API Behaviour</h4>
                         <div className="flex items-center gap-2 font-mono text-xs bg-ink/5 border border-ink/5 rounded-[8px] px-3 py-2 overflow-x-auto whitespace-nowrap">
                             <span className="text-accent-magenta font-bold">GET</span>
                             <span className="text-ink">/api/employees?department=IT</span>
                         </div>
-                        <ul className="list-disc list-inside space-y-2 text-muted pl-1 leading-relaxed"> {/* ต้องเปลี่ยน */}
+                        <ul className="list-disc list-inside space-y-2 text-muted pl-1 leading-relaxed">
                             <li>Answer
                                 <code className="font-mono bg-ink/5 px-1.5 py-0.5 rounded text-xs text-ink">200</code>
                                 with a JSON array of the employees in that department.
@@ -61,7 +79,7 @@ export default async function ProblemPage({
                                 on <code className="font-mono bg-ink/5 px-1.5 py-0.5 rounded text-xs text-ink">department.name</code>
                                 . Fetching every row and filtering in JavaScript fails the query-count check.
                             </p>
-                        </div>
+                        </div> */}
 
                         <div className="space-y-2">
                             <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted/70">Expected response</h4>
@@ -69,7 +87,14 @@ export default async function ProblemPage({
                                 <div><span className="status-badge status-pass">200 OK</span></div>
                                 <div className="mt-2 text-accent-cyan">[</div>
                                 <div className="pl-3 whitespace-nowrap"> {/* ผลลัพธ์ตัวอย่างในรูปแบบ JSON */}
-
+                                    {expectedOutput && (
+                                        <div className="space-y-2">
+                                            <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted/70">Expected output</h4>
+                                            <pre className="font-mono text-[11px] leading-relaxed bg-ink/5 border border-ink/5 rounded-[8px] p-3 text-muted overflow-x-auto max-h-64">
+                                                {JSON.stringify(expectedOutput, null, 2)}
+                                            </pre>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="text-accent-cyan">]</div>
                             </div>
@@ -77,7 +102,10 @@ export default async function ProblemPage({
                     </div>
                 </div>
             </aside>
-            <ProblemWorkspace exerciseId={exercise.id} starterCode={exercise.exc_anwser_field ?? ''} />
+            <ProblemWorkspace
+                exerciseId={exercise.id}
+                starterCode={latestCode ?? exercise.exc_anwser_field ?? ''}
+            />
         </main>
     </div>
 }

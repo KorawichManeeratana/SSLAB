@@ -24,9 +24,6 @@ export async function runQuerySubmission(code: string, problem: QueryProblem) {
     await writeFile(studentFile, code, 'utf8')
     await writeFile(problemFile, JSON.stringify(problem), 'utf8')
 
-    console.log("std file:", studentFile);
-    console.log("prob file:", problemFile)
-
     // argument เหมือนใน .bat ทุกตัว
     const args = [
       'run', '--rm',

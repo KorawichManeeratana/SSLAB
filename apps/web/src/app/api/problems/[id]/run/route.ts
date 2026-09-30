@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getExerciseForGrading } from '../../../../repositories/exercise.repository'
-import { runQuerySubmission } from '../../../../services/gradingService'
+import { runQuerySubmission, toVerdict, toScore } from '@/app/services/gradingService'
 
 export const runtime = 'nodejs'
 
@@ -12,8 +12,6 @@ export async function POST(
     /* เดวต้องมีการเช็ค session ด้วยแต่ไว้ก่อนตอนนี้ลอง */
     const { id } = await params
     const exerciseId = Number(id)
-
-    console.log("ex id:", exerciseId);
 
 
     if (!Number.isInteger(exerciseId)) {
@@ -33,9 +31,6 @@ export async function POST(
         return NextResponse.json({ error: 'ไม่พบโจทย์' }, { status: 404 })
     }
 
-    console.log("ex:", exercise)
-
-
 
     const result = await runQuerySubmission(code, {
         name: exercise.exc_name,
@@ -45,5 +40,15 @@ export async function POST(
         orderMatters: exercise.order_matters,
     })
 
-    return NextResponse.json(result)
+    console.log("res:", {
+        verdict: toVerdict(result),
+        score: toScore(result),
+        result,
+    })
+
+    return NextResponse.json({
+        verdict: toVerdict(result),
+        score: toScore(result),
+        result,
+    })
 }

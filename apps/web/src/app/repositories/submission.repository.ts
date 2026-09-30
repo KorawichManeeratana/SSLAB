@@ -37,3 +37,12 @@ export async function createSubmission(input: {
     select: { id: true, attempt_number: true },
   })
 }
+
+export async function getLatestCode(userId: number, exerciseId: number) {
+  const last = await prisma.user_exercise.findFirst({
+    where: { user_id: userId, exercise_id: exerciseId },
+    orderBy: { created_at: 'desc' },
+    select: { code: true },
+  })
+  return last?.code ?? null
+}

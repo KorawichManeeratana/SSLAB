@@ -2,11 +2,12 @@ import { NextResponse } from 'next/server'
 import { getExerciseForGrading } from '@/app/repositories/exercise.repository'
 import { createSubmission } from '@/app/repositories/submission.repository'
 import { runQuerySubmission, toVerdict, toScore } from '@/app/services/gradingService'
+import { getCurrentUserId } from '@/lib/current-user'
 
 export const runtime = 'nodejs'
 
 // TODO: เปลี่ยนเป็น userId จาก session ตอนทำ login — ห้าม merge เข้า main ทั้งแบบนี้
-const DEV_USER_ID = 2
+const userId = await getCurrentUserId()
 
 export async function POST(
   req: Request,
@@ -52,7 +53,7 @@ export async function POST(
   }
 
   const saved = await createSubmission({
-    userId: DEV_USER_ID,
+    userId: userId,
     exerciseId,
     code,
     verdict,
