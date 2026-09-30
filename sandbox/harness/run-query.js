@@ -155,6 +155,7 @@ async function main() {
         reason: cmp.reason,
         expectedRows: solution.length,
         actualRows: Array.isArray(actualans) ? actualans.length : "N/A",
+        actual: Array.isArray(actualans) ? actualans.slice(0, 50) : actualans,
       },
     ],
   });
