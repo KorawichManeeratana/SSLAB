@@ -45,6 +45,17 @@ enum EnrollStatus {
   unactive
 }
 
+enum Verdict {
+  PENDING
+  ACCEPTED
+  WRONG_ANSWER
+  TLE
+  MLE
+  RUNTIME_ERROR
+  SYSTEM_ERROR
+}
+
+
 
 model Faculty {
   id       Int    @id @default(autoincrement())
@@ -150,16 +161,17 @@ model user_exercise {
   id     Int            @id @default(autoincrement())
   score  Int
   status ExerciseStatus @default(uncomplete)
+  verdict Verdict       @default(PENDING)
 
   created_at DateTime @default(now())
   update     DateTime @updatedAt
 
   code String?
-  result String?
+  result Json?
   graded_at DateTime @default(now())
-  ai_feedback String
+  ai_feedback String?
   attempt_number Int
-  exec_time Int
+  exec_time Int?
   user_id     Int
 
   user Users @relation(fields: [user_id],references: [id])
@@ -167,6 +179,7 @@ model user_exercise {
   exercise_id Int
 
   exercise Exercises @relation(fields: [exercise_id],references: [id])
+  @@index([user_id, exercise_id])
 }
 
 

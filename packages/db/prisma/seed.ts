@@ -48,14 +48,10 @@ async function main() {
 
   // 4) รายวิชา + ลงทะเบียน
   const course = await prisma.courses.create({
-    data: { course_name: 'การพัฒนาเว็บฝั่งเซิร์ฟเวอร์' },
-  })
-
-  await prisma.enrolls.createMany({
-    data: [
-      { user_id: teacher.id, course_id: course.id },
-      { user_id: student.id, course_id: course.id },
-    ],
+    data: {
+      course_name: 'การพัฒนาเว็บฝั่งเซิร์ฟเวอร์',
+      creator_id: teacher.id,
+    },
   })
 
   // 5) บทเรียน

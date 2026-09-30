@@ -108,12 +108,18 @@ async function main() {
     if (typeof student !== "function") {
       throw new Error("need to export function solve(db)");
     }
-  } catch (err) {
+   } catch (err) {
     return report({
-      ok: false,
+      ok: true,
       passed: 0,
       failed: 1,
-      systemError: `Cannot Load Student Code: ${err.message}`,
+      cases: [
+        {
+          name: problem.name || "query test",
+          pass: false,
+          error: `โหลดโค้ดไม่ได้ (ตรวจ syntax): ${err.message}`,
+        },
+      ],
     });
   }
 

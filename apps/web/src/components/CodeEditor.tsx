@@ -1,5 +1,6 @@
 'use client'
 import dynamic from 'next/dynamic'
+import { off } from 'process'
 
 const MonacoEditor = dynamic(
     () => import('@monaco-editor/react'),
@@ -29,6 +30,7 @@ export function CodeEditor({ value, onChange, language = 'javascript' }: CodeEdi
                 fontSize: 14,
                 scrollBeyondLastLine: false,
                 tabSize: 2,
+                /* lineNumbers : "off", */
             }}
         />
     )
