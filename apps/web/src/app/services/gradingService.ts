@@ -3,6 +3,7 @@ import { execFile } from 'node:child_process'
 import { mkdtemp, writeFile, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import type { RunOutput } from '@/type/grading'
 
 const TIMEOUT_SEC = 10
 
@@ -13,6 +14,7 @@ export type QueryProblem = {
   solution: string
   orderMatters: boolean
 }
+
 
 export async function runQuerySubmission(code: string, problem: QueryProblem) {
   // สร้างโฟลเดอร์ชั่วคราวแยกต่อการส่งแต่ละครั้ง
@@ -83,4 +85,32 @@ export function toVerdict(result: any) {
 export function toScore(result: any) {
   const total = (result?.passed ?? 0) + (result?.failed ?? 0)
   return total === 0 ? 0 : Math.round((result.passed / total) * 100)
+}
+
+
+export function toRunOutput(result: any, durationMs: number): RunOutput {
+  const request = { method: 'CALL', target: 'solve(db)' }
+
+  if (result?.status === 'TLE') {
+    return { request, status: 504, statusText: 'Gateway Timeout', durationMs,
+             error: 'Execution exceeded the time limit (10s)' }
+  }
+  if (!result?.ok) {
+    return { request, status: 503, statusText: 'Service Unavailable', durationMs,
+             error: 'ระบบตรวจงานขัดข้อง กรุณาลองใหม่' }
+  }
+
+  const c = result.cases?.[0]
+  if (c?.error) {
+    return { request, status: 500, statusText: 'Internal Server Error', durationMs, error: c.error }
+  }
+
+  return {
+    request,
+    status: 200,
+    statusText: 'OK',
+    durationMs,
+    rowCount: typeof c?.actualRows === 'number' ? c.actualRows : undefined,
+    body: c?.actual,
+  }
 }

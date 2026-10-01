@@ -1,8 +1,6 @@
 import 'server-only'
 import { prisma } from '@sslab/db'
-
-type Verdict =
-  | 'ACCEPTED' | 'WRONG_ANSWER' | 'TLE' | 'MLE' | 'RUNTIME_ERROR' | 'SYSTEM_ERROR'
+import type { Verdict } from '@/type/grading'
 
 export async function createSubmission(input: {
   userId: number

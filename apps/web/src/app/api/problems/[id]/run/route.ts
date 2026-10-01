@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getExerciseForGrading } from '../../../../repositories/exercise.repository'
-import { runQuerySubmission, toVerdict, toScore } from '@/app/services/gradingService'
+import { runQuerySubmission, toRunOutput } from '@/app/services/gradingService'
 
 export const runtime = 'nodejs'
 
@@ -12,7 +12,7 @@ export async function POST(
     /* เดวต้องมีการเช็ค session ด้วยแต่ไว้ก่อนตอนนี้ลอง */
     const { id } = await params
     const exerciseId = Number(id)
-
+    const startedAt = Date.now()
 
     if (!Number.isInteger(exerciseId)) {
         return NextResponse.json({ error: 'invalid id' }, { status: 400 })
@@ -40,15 +40,6 @@ export async function POST(
         orderMatters: exercise.order_matters,
     })
 
-    console.log("res:", {
-        verdict: toVerdict(result),
-        score: toScore(result),
-        result,
-    })
 
-    return NextResponse.json({
-        verdict: toVerdict(result),
-        score: toScore(result),
-        result,
-    })
+    return NextResponse.json(toRunOutput(result, Date.now() - startedAt))
 }

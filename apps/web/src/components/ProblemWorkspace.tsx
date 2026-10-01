@@ -1,15 +1,19 @@
 "use client"
 import { CodeEditor } from "@/components/CodeEditor";
 import { useState } from "react";
+import { RunPanel } from './RunPanel'
 import { ResultPanel } from "./ResultPanel";
+import { DatabaseExplorer } from "./databaseExplorer";
+import { DbExplorerData } from "@/type/db-explorer";
 
 type Props = {
     exerciseId: number
     starterCode: string
+    explorer: DbExplorerData | null
 }
 
 
-export default function ProblemWorkspace({ exerciseId, starterCode }: Props) {
+export default function ProblemWorkspace({ exerciseId, starterCode, explorer }: Props) {
     const [code, setCode] = useState(starterCode ?? '')
     const [result, setResult] = useState<any>(null)
     const [running, setRunning] = useState<null | 'run' | 'submit'>(null)
@@ -24,9 +28,9 @@ export default function ProblemWorkspace({ exerciseId, starterCode }: Props) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ code }),
             })
-            setResult(await res.json())
+            setResult({ kind, data: await res.json() })
         } catch {
-            setResult({ error: 'เชื่อมต่อ server ไม่ได้' })
+            setResult({ kind, data: { error: '...' } })
         } finally {
             setRunning(null)
         }
@@ -67,17 +71,7 @@ export default function ProblemWorkspace({ exerciseId, starterCode }: Props) {
                 </section>
 
                 <section className="panel">
-                    <div className="panel-header">
-                        <h2 className="panel-title">
-                            <span className="icon">Db</span>
-                            Database Explorer
-                        </h2>
-                    </div>
-
-                    <div className="flex items-center gap-1 p-0.5 rounded-[8px] border border-ink/10 bg-surface/60 font-mono text-[10px] uppercase">
-                        <button className="px-2.5 py-1 rounded-[6px] border border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan font-bold tracking-[0.15em]">Data</button>
-                        <button className="px-2.5 py-1 rounded-[6px] border border-transparent text-muted hover:text-ink tracking-[0.15em] transition-colors">Schema</button>
-                    </div>
+                    <DatabaseExplorer data={explorer} />
                 </section>
             </div>
 
@@ -88,7 +82,13 @@ export default function ProblemWorkspace({ exerciseId, starterCode }: Props) {
                     <h2 className="panel-title">Result</h2>
                 </div>
                 <div className="panel-content">
-                    <ResultPanel data={result} running={running} />
+                    {running && <p className="text-muted">{running === 'submit' ? 'กำลังส่งและตรวจ...' : 'กำลังรัน...'}</p>}
+                    {!running && !result && <p className="text-muted">กด RUN เพื่อดูผลลัพธ์ หรือ SUBMIT เพื่อส่งตรวจ</p>}
+                    {!running && result?.data?.error && !result.data.status && (
+                        <p className="text-red-400">{result.data.error}</p>
+                    )}
+                    {!running && result?.kind === 'run' && result.data.status && <RunPanel output={result.data} />}
+                    {!running && result?.kind === 'submit' && !result.data.error && <ResultPanel data={result.data} running={null} />}
                 </div>
             </section>
         </>

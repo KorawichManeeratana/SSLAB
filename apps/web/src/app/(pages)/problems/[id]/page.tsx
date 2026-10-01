@@ -6,6 +6,8 @@ import { getCurrentUserId } from '@/lib/current-user';
 import { getLatestCode } from '@/app/repositories/submission.repository';
 import { getExerciseForGrading } from '../../../repositories/exercise.repository';
 import { computeExpectedOutput } from '../../../services/expectedOutput.services';
+import { buildDbExplorer } from '../../../services/dbExplorerServices'
+import type { DbExplorerData } from '@/type/db-explorer'
 
 
 
@@ -32,6 +34,13 @@ export default async function ProblemPage({
             : null
     } catch {
         expectedOutput = null   // ถ้าเฉลยพัง หน้าโจทย์ยังต้องเปิดได้
+    }
+
+    let explorer: DbExplorerData | null = null
+    try {
+        explorer = grading ? buildDbExplorer(grading.exc_schema, grading.exc_seed) : null
+    } catch {
+        explorer = null
     }
 
     return <div>
@@ -85,7 +94,6 @@ export default async function ProblemPage({
                             <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted/70">Expected response</h4>
                             <div className="font-mono text-[11px] leading-relaxed bg-ink/5 border border-ink/5 rounded-[8px] p-3 text-muted overflow-x-auto">
                                 <div><span className="status-badge status-pass">200 OK</span></div>
-                                <div className="mt-2 text-accent-cyan">[</div>
                                 <div className="pl-3 whitespace-nowrap"> {/* ผลลัพธ์ตัวอย่างในรูปแบบ JSON */}
                                     {expectedOutput && (
                                         <div className="space-y-2">
@@ -96,7 +104,6 @@ export default async function ProblemPage({
                                         </div>
                                     )}
                                 </div>
-                                <div className="text-accent-cyan">]</div>
                             </div>
                         </div>
                     </div>
@@ -105,6 +112,7 @@ export default async function ProblemPage({
             <ProblemWorkspace
                 exerciseId={exercise.id}
                 starterCode={latestCode ?? exercise.exc_anwser_field ?? ''}
+                explorer={explorer}
             />
         </main>
     </div>
