@@ -44,3 +44,23 @@ export async function getLatestCode(userId: number, exerciseId: number) {
   })
   return last?.code ?? null
 }
+
+/* เอาข้อมูลก่อนไปหน้าผลลัพธ์การตรวจ */
+export function getSubmissionForView(id: number, userId: number) {
+  return prisma.user_exercise.findFirst({
+    // ต้องมี user_id ใน where ด้วย ไม่งั้นนักศึกษาเปลี่ยนเลขใน URL แล้วดูงานของคนอื่นได้
+    where: { id, user_id: userId },
+    select: {
+      id: true,
+      code: true,
+      verdict: true,
+      score: true,
+      result: true,
+      attempt_number: true,
+      ai_feedback: true,
+      exec_time: true,
+      created_at: true,
+      exercise: { select: { id: true, exc_name: true } },
+    },
+  })
+}

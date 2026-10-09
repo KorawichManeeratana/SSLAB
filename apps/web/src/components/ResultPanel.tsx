@@ -26,9 +26,6 @@ export function ResultPanel({ data, running }: Props) {
     if (running) {
         return <p className="text-muted">{running === 'submit' ? 'กำลังส่งและตรวจ...' : 'กำลังรัน...'}</p>
     }
-    if (!data) {
-        return <p className="text-muted">กด RUN เพื่อทดสอบ หรือ SUBMIT เพื่อส่งงาน</p>
-    }
     if (data.error) {
         return <p className="text-red-400">{data.error}</p>
     }

@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import type { DbExplorerData, ExplorerColumn } from '@/type/db-explorer'
+import { SchemaDiagram } from './schema/SchemaDiagram'
 
 function columnMeta(c: ExplorerColumn) {
   if (c.references) {
@@ -43,11 +44,10 @@ export function DatabaseExplorer({ data }: { data: DbExplorerData | null }) {
             <button
               key={v}
               onClick={() => setView(v)}
-              className={`px-2.5 py-1 rounded-[6px] border tracking-[0.15em] transition-colors ${
-                view === v
+              className={`px-2.5 py-1 rounded-[6px] border tracking-[0.15em] transition-colors ${view === v
                   ? 'border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan font-bold'
                   : 'border-transparent text-muted hover:text-ink'
-              }`}
+                }`}
             >
               {v}
             </button>
@@ -67,11 +67,10 @@ export function DatabaseExplorer({ data }: { data: DbExplorerData | null }) {
                 <button
                   key={t.name}
                   onClick={() => setActive(t.name)}
-                  className={`px-3 py-1 rounded-full border font-mono text-xs whitespace-nowrap transition-colors ${
-                    t.name === active
+                  className={`px-3 py-1 rounded-full border font-mono text-xs whitespace-nowrap transition-colors ${t.name === active
                       ? 'border-accent-cyan/50 bg-accent-cyan/10 text-accent-cyan'
                       : 'border-ink/15 text-muted hover:text-ink'
-                  }`}
+                    }`}
                 >
                   {t.name} <span className="opacity-60">{t.rowCount}</span>
                 </button>
@@ -135,7 +134,9 @@ export function DatabaseExplorer({ data }: { data: DbExplorerData | null }) {
           )}
 
           {view === 'schema' && (
-            <p className="p-4 text-muted text-sm">Schema view — ทำในขั้นถัดไป</p>
+            <div className="h-[360px] w-full">
+              <SchemaDiagram data={data} />
+            </div>
           )}
         </>
       )}

@@ -193,6 +193,197 @@ const LECTURES = [
 ] as const
 // @@EXERCISES_END
 
+// ---------------------------------------------------------------------------
+// Advanced exercises: multiple tables, foreign keys, self-joins, window functions
+// Several exercises share one database so students can reuse what they learned.
+// ---------------------------------------------------------------------------
+const SCHOOL_SCHEMA =
+  'CREATE TABLE student (id INTEGER PRIMARY KEY, name TEXT NOT NULL, year INTEGER NOT NULL);' +
+  'CREATE TABLE course (id INTEGER PRIMARY KEY, code TEXT NOT NULL UNIQUE, title TEXT NOT NULL);' +
+  'CREATE TABLE enrollment (id INTEGER PRIMARY KEY, student_id INTEGER NOT NULL REFERENCES student(id), course_id INTEGER NOT NULL REFERENCES course(id), score INTEGER);'
+
+const SCHOOL_SEED =
+  "INSERT INTO student VALUES (1,'Arthit',2),(2,'Benjamas',3),(3,'Chalerm',2),(4,'Duangjai',4),(5,'Ekachai',3),(6,'Fah',2);" +
+  "INSERT INTO course VALUES (1,'WEB201','Server-Side Web Development'),(2,'DB101','Database Systems'),(3,'NET210','Computer Networks'),(4,'SEC300','Web Security'),(5,'AI350','Applied Machine Learning');" +
+  'INSERT INTO enrollment VALUES ' +
+  '(1,1,1,78),(2,2,1,91),(3,3,1,NULL),(4,4,1,91),' +
+  '(5,1,2,65),(6,2,2,88),(7,5,2,72),' +
+  '(8,3,3,NULL),(9,6,3,NULL),' +
+  '(10,4,4,95),(11,5,4,83),(12,6,4,95);'
+
+const SHOP_SCHEMA =
+  'CREATE TABLE customer (id INTEGER PRIMARY KEY, name TEXT NOT NULL);' +
+  'CREATE TABLE product (id INTEGER PRIMARY KEY, name TEXT NOT NULL, category TEXT NOT NULL, price INTEGER NOT NULL);' +
+  'CREATE TABLE orders (id INTEGER PRIMARY KEY, customer_id INTEGER NOT NULL REFERENCES customer(id), order_date TEXT NOT NULL);' +
+  'CREATE TABLE order_item (id INTEGER PRIMARY KEY, order_id INTEGER NOT NULL REFERENCES orders(id), product_id INTEGER NOT NULL REFERENCES product(id), quantity INTEGER NOT NULL, unit_price INTEGER NOT NULL);'
+
+const SHOP_SEED =
+  "INSERT INTO customer VALUES (1,'Nattapong'),(2,'Siriporn'),(3,'Krit'),(4,'Mali'),(5,'Thanakorn');" +
+  "INSERT INTO product VALUES (1,'Mechanical Keyboard','Electronics',2500),(2,'Wireless Mouse','Electronics',800),(3,'Desk Lamp','Home',650),(4,'Notebook A5','Stationery',45),(5,'Gel Pen Set','Stationery',120),(6,'Office Chair','Home',4200),(7,'USB-C Hub','Electronics',1100);" +
+  "INSERT INTO orders VALUES (1,1,'2026-01-05'),(2,2,'2026-01-18'),(3,1,'2026-02-02'),(4,3,'2026-02-14'),(5,4,'2026-02-20'),(6,2,'2026-03-03'),(7,3,'2026-03-11');" +
+  'INSERT INTO order_item VALUES ' +
+  '(1,1,1,1,2500),(2,1,4,3,45),' +
+  '(3,2,3,2,650),(4,2,5,1,120),' +
+  '(5,3,2,2,750),(6,3,7,1,1100),' +
+  '(7,4,4,10,40),(8,4,5,4,120),' +
+  '(9,5,6,1,4200),' +
+  '(10,6,1,1,2400),(11,6,3,1,650),' +
+  '(12,7,3,3,600);'
+
+const COMPANY_SCHEMA =
+  'CREATE TABLE department (id INTEGER PRIMARY KEY, name TEXT NOT NULL);' +
+  'CREATE TABLE employee (id INTEGER PRIMARY KEY, name TEXT NOT NULL, salary INTEGER NOT NULL, department_id INTEGER NOT NULL REFERENCES department(id), manager_id INTEGER REFERENCES employee(id));'
+
+const COMPANY_SEED =
+  "INSERT INTO department VALUES (1,'Engineering'),(2,'Marketing'),(3,'Finance');" +
+  'INSERT INTO employee VALUES ' +
+  "(1,'Somsak',95000,1,NULL)," +
+  "(2,'Wanida',72000,1,1)," +
+  "(3,'Piti',98000,1,1)," +
+  "(4,'Kanya',72000,1,2)," +
+  "(5,'Anan',60000,2,NULL)," +
+  "(6,'Malee',64000,2,5)," +
+  "(7,'Chai',58000,2,5)," +
+  "(8,'Rattana',80000,3,NULL)," +
+  "(9,'Preecha',80000,3,8)," +
+  "(10,'Nok',65000,1,2);"
+
+const ADVANCED_LECTURES = [
+  {
+    lecture_name: 'Multi-Table Joins',
+    lecture_week: '4',
+    exercises: [
+      {
+        exc_name: 'Course Enrollment Summary',
+        exc_difficulty: 'expert',
+        exc_description:
+          'The school database has three tables: student, course and enrollment (a student can enroll in many courses). ' +
+          'An enrollment with a NULL score has not been graded yet. ' +
+          'Write a function solve(db) that returns one row for EVERY course, including courses nobody has enrolled in, with the columns: ' +
+          'code, title, enrolled (number of enrollments) and graded (number of enrollments that have a score). ' +
+          'Sort by enrolled from highest to lowest; if two courses have the same number, sort by code (A to Z).',
+        exc_schema: SCHOOL_SCHEMA,
+        exc_seed: SCHOOL_SEED,
+        exc_solution:
+          'SELECT c.code, c.title, COUNT(e.id) AS enrolled, COUNT(e.score) AS graded ' +
+          'FROM course c LEFT JOIN enrollment e ON e.course_id = c.id ' +
+          'GROUP BY c.id, c.code, c.title ORDER BY enrolled DESC, c.code ASC',
+        order_matters: true,
+      },
+      {
+        exc_name: 'Best-Selling Products by Revenue',
+        exc_difficulty: 'expert',
+        exc_description:
+          'The shop database has four tables: customer, product, orders and order_item. ' +
+          'Each order_item stores the quantity and the unit_price paid at the time of the order (which may differ from the current product price). ' +
+          'Write a function solve(db) that returns the 3 products with the highest revenue, where revenue = SUM(quantity * unit_price). ' +
+          'Return the columns id, name, units_sold and revenue, sorted by revenue from highest to lowest; ' +
+          'if two products have the same revenue, the one with the smaller id comes first.',
+        exc_schema: SHOP_SCHEMA,
+        exc_seed: SHOP_SEED,
+        exc_solution:
+          'SELECT p.id, p.name, SUM(oi.quantity) AS units_sold, SUM(oi.quantity * oi.unit_price) AS revenue ' +
+          'FROM order_item oi JOIN product p ON p.id = oi.product_id ' +
+          'GROUP BY p.id, p.name ORDER BY revenue DESC, p.id ASC LIMIT 3',
+        order_matters: true,
+      },
+      {
+        exc_name: 'Monthly Sales Report',
+        exc_difficulty: 'expert',
+        exc_description:
+          'Using the shop database, write a function solve(db) that summarises sales per month. ' +
+          'order_date is stored as text in the format YYYY-MM-DD. ' +
+          "Return the columns month (format 'YYYY-MM'), order_count (number of distinct orders in that month) and revenue (total of quantity * unit_price), " +
+          'sorted by month from earliest to latest. ' +
+          'Be careful: an order with several items must still be counted as one order.',
+        exc_schema: SHOP_SCHEMA,
+        exc_seed: SHOP_SEED,
+        exc_solution:
+          "SELECT substr(o.order_date, 1, 7) AS month, COUNT(DISTINCT o.id) AS order_count, SUM(oi.quantity * oi.unit_price) AS revenue " +
+          'FROM orders o JOIN order_item oi ON oi.order_id = o.id ' +
+          'GROUP BY month ORDER BY month ASC',
+        order_matters: true,
+      },
+      {
+        exc_name: 'Customers Who Never Bought Electronics',
+        exc_difficulty: 'expert',
+        exc_description:
+          'Using the shop database, write a function solve(db) that finds customers who have placed at least one order, ' +
+          "but have never bought any product in the 'Electronics' category. " +
+          'Customers who have never placed an order must NOT appear in the result. ' +
+          'Return the columns id and name, sorted by id from lowest to highest.',
+        exc_schema: SHOP_SCHEMA,
+        exc_seed: SHOP_SEED,
+        exc_solution:
+          'SELECT c.id, c.name FROM customer c ' +
+          'WHERE EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id) ' +
+          'AND NOT EXISTS (' +
+          'SELECT 1 FROM orders o JOIN order_item oi ON oi.order_id = o.id JOIN product p ON p.id = oi.product_id ' +
+          "WHERE o.customer_id = c.id AND p.category = 'Electronics') " +
+          'ORDER BY c.id ASC',
+        order_matters: true,
+      },
+    ],
+  },
+  {
+    lecture_name: 'Self-Joins, Subqueries and Window Functions',
+    lecture_week: '5',
+    exercises: [
+      {
+        exc_name: 'Top Scorer per Course',
+        exc_difficulty: 'expert',
+        exc_description:
+          'Using the school database (student, course, enrollment), write a function solve(db) that finds the top-scoring student in each course. ' +
+          'Ignore enrollments that have not been graded (score is NULL), and skip courses that have no graded enrollments at all. ' +
+          'If two students share the highest score in a course, pick the one with the smaller student id. ' +
+          'Return the columns code, student_name and score, sorted by code (A to Z).',
+        exc_schema: SCHOOL_SCHEMA,
+        exc_seed: SCHOOL_SEED,
+        exc_solution:
+          'SELECT code, student_name, score FROM (' +
+          'SELECT c.code, s.name AS student_name, e.score, ' +
+          'ROW_NUMBER() OVER (PARTITION BY c.id ORDER BY e.score DESC, s.id ASC) AS rn ' +
+          'FROM enrollment e JOIN course c ON c.id = e.course_id JOIN student s ON s.id = e.student_id ' +
+          'WHERE e.score IS NOT NULL) WHERE rn = 1 ORDER BY code ASC',
+        order_matters: true,
+      },
+      {
+        exc_name: 'Employees Who Earn More Than Their Manager',
+        exc_difficulty: 'expert',
+        exc_description:
+          'The company database has two tables: department and employee. ' +
+          'employee.manager_id points to another row in the same employee table (a self-referencing foreign key); top-level managers have NULL. ' +
+          'Write a function solve(db) that returns every employee whose salary is strictly greater than their own manager\'s salary. ' +
+          'Return the columns employee, manager and department (the employee\'s department name), sorted by the employee\'s id.',
+        exc_schema: COMPANY_SCHEMA,
+        exc_seed: COMPANY_SEED,
+        exc_solution:
+          'SELECT e.name AS employee, m.name AS manager, d.name AS department ' +
+          'FROM employee e JOIN employee m ON m.id = e.manager_id JOIN department d ON d.id = e.department_id ' +
+          'WHERE e.salary > m.salary ORDER BY e.id ASC',
+        order_matters: true,
+      },
+      {
+        exc_name: 'Salary Rank Within Department',
+        exc_difficulty: 'expert',
+        exc_description:
+          'Using the company database, write a function solve(db) that ranks employees by salary inside their own department, highest salary = rank 1. ' +
+          'Employees with the same salary in the same department share the same rank, and the next rank is skipped (1, 2, 2, 4). ' +
+          'Return the columns department, name, salary and salary_rank, ' +
+          'sorted by department name (A to Z), then salary_rank, then employee name (A to Z).',
+        exc_schema: COMPANY_SCHEMA,
+        exc_seed: COMPANY_SEED,
+        exc_solution:
+          'SELECT d.name AS department, e.name, e.salary, ' +
+          'RANK() OVER (PARTITION BY e.department_id ORDER BY e.salary DESC) AS salary_rank ' +
+          'FROM employee e JOIN department d ON d.id = e.department_id ' +
+          'ORDER BY department ASC, salary_rank ASC, e.name ASC',
+        order_matters: true,
+      },
+    ],
+  },
+] as const
+
 async function main() {
   // 1) Clear old data (children before parents to satisfy foreign keys)
   await prisma.user_exercise.deleteMany()
@@ -251,7 +442,7 @@ async function main() {
   // 5) Lectures + exercises
   const exerciseIds: number[] = []
 
-  for (const lec of LECTURES) {
+  for (const lec of [...LECTURES, ...ADVANCED_LECTURES]) {
     const lecture = await prisma.lectures.create({
       data: {
         lecture_name: lec.lecture_name,

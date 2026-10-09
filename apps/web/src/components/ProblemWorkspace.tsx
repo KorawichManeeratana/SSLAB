@@ -5,6 +5,7 @@ import { RunPanel } from './RunPanel'
 import { ResultPanel } from "./ResultPanel";
 import { DatabaseExplorer } from "./databaseExplorer";
 import { DbExplorerData } from "@/type/db-explorer";
+import { useRouter } from 'next/navigation'
 
 type Props = {
     exerciseId: number
@@ -17,7 +18,7 @@ export default function ProblemWorkspace({ exerciseId, starterCode, explorer }: 
     const [code, setCode] = useState(starterCode ?? '')
     const [result, setResult] = useState<any>(null)
     const [running, setRunning] = useState<null | 'run' | 'submit'>(null)
-
+    const router = useRouter()
 
     async function send(kind: 'run' | 'submit') {
         setRunning(kind)
@@ -28,7 +29,13 @@ export default function ProblemWorkspace({ exerciseId, starterCode, explorer }: 
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ code }),
             })
-            setResult({ kind, data: await res.json() })
+            const data = await res.json()
+
+            if (kind === 'submit' && res.ok && data.submissionId) {
+                router.push(`/submissions/${data.submissionId}`)
+                return
+            }
+            setResult({ kind, data })
         } catch {
             setResult({ kind, data: { error: '...' } })
         } finally {
