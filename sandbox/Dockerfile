@@ -1,5 +1,5 @@
 # build:  docker build -t sslab-runner .
-FROM node:22-slim
+FROM node:22.22-slim
  
 WORKDIR /app
  
