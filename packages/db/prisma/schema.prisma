@@ -10,12 +10,16 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 enum Role {
   student
   teacher
   ta
   admin
+}
+
+enum GradingEngine {
+  QUERY
+  HTTP
 }
 
 enum Status {
@@ -55,7 +59,13 @@ enum Verdict {
   SYSTEM_ERROR
 }
 
-
+enum HttpMethod {
+  GET
+  POST
+  PUT
+  PATCH
+  DELETE
+}
 
 model Faculty {
   id       Int    @id @default(autoincrement())
@@ -63,7 +73,6 @@ model Faculty {
 
   users Users[]
 }
-
 
 model Users {
   id            Int      @id @default(autoincrement())
@@ -76,26 +85,24 @@ model Users {
   user_status   Status   @default(available)
   created_at    DateTime @default(now())
 
-  fac_id Int?
-  faculty       Faculty? @relation(fields: [fac_id],references: [id])
+  fac_id  Int?
+  faculty Faculty? @relation(fields: [fac_id], references: [id])
 
-  enrolls Enrolls[]
-  exercises Exercises[]
+  enrolls      Enrolls[]
+  exercises    Exercises[]
   userExercise user_exercise[]
-  course Courses[]
-
+  course       Courses[]
 }
-
 
 model Courses {
   id            Int      @id @default(autoincrement())
   course_name   String
   course_status Status   @default(available)
   created_at    DateTime @default(now())
-  creator_id Int
-  user Users @relation(fields: [creator_id],references: [id])
+  creator_id    Int
+  user          Users    @relation(fields: [creator_id], references: [id])
 
-  enrolls Enrolls[]
+  enrolls  Enrolls[]
   lectures Lectures[]
 }
 
@@ -104,16 +111,15 @@ model Enrolls {
   created_at    DateTime     @default(now())
   enroll_status EnrollStatus @default(active)
 
-  user_id   Int 
-  
-  user Users @relation(fields: [user_id],references: [id])
+  user_id Int
+
+  user Users @relation(fields: [user_id], references: [id])
 
   course_id Int
-  course Courses @relation(fields: [course_id],references: [id])
+  course    Courses @relation(fields: [course_id], references: [id])
 
   @@unique([user_id, course_id])
 }
-
 
 model Exercises {
   id             Int    @id @default(autoincrement())
@@ -136,52 +142,64 @@ model Exercises {
 
   lecture_id Int
 
-  lecture Lectures @relation(fields: [lecture_id],references: [id])
+  lecture Lectures @relation(fields: [lecture_id], references: [id])
 
   author_id Int
 
-  author Users @relation(fields: [author_id],references: [id])
+  author Users @relation(fields: [author_id], references: [id])
 
-  testcases Testcase[]
+  exc_engine GradingEngine @default(QUERY)
+
+  testcases    Testcase[]
   userExercise user_exercise[]
 }
 
-
 model Testcase {
-  id         Int      @id @default(autoincrement())
-  case_name  String
-  created_at DateTime @default(now())
+  id              Int        @id @default(autoincrement())
+  case_name       String
+  created_at      DateTime   @default(now())
 
-  exercise_id Int
+  sort_order      Int        @default(0)      // ลำดับการรัน
+  method          HttpMethod @default(GET)
+  path            String                      // เช่น /api/books?maxPrice=500
+  headers         Json?
+  body            Json?                       // request body (POST/PUT)
 
-  exercise Exercises @relation(fields: [exercise_id],references: [id])
+  expected_status Int        @default(200)
+  expected_body   Json?                       // ผลที่ต้องได้แบบตายตัว
+  order_matters   Boolean    @default(true)
+
+  exercise_id     Int
+  exercise        Exercises  @relation(fields: [exercise_id], references: [id])
+
+  @@index([exercise_id])
 }
 
 model user_exercise {
-  id     Int            @id @default(autoincrement())
-  score  Int
-  status ExerciseStatus @default(uncomplete)
-  verdict Verdict       @default(PENDING)
+  id      Int            @id @default(autoincrement())
+  score   Int
+  status  ExerciseStatus @default(uncomplete)
+  verdict Verdict        @default(PENDING)
 
   created_at DateTime @default(now())
   update     DateTime @updatedAt
 
-  code String?
-  result Json?
-  graded_at DateTime @default(now())
-  ai_feedback String?
+  code           String?
+  result         Json?
+  graded_at      DateTime @default(now())
+  ai_feedback    String?
   attempt_number Int
-  exec_time Int?
-  user_id     Int
+  exec_time      Int?
+  user_id        Int
 
-  user Users @relation(fields: [user_id],references: [id])
+  user Users @relation(fields: [user_id], references: [id])
 
   exercise_id Int
 
-  exercise Exercises @relation(fields: [exercise_id],references: [id])
+  exercise Exercises @relation(fields: [exercise_id], references: [id])
+
   @@index([user_id, exercise_id])
 }
-
 
 model Lectures {
   id           Int      @id @default(autoincrement())
@@ -192,12 +210,11 @@ model Lectures {
 
   course_id Int
 
-  course Courses @relation(fields: [course_id],references: [id])
+  course Courses @relation(fields: [course_id], references: [id])
 
   exercises Exercises[]
   files     Files[]
 }
-
 
 model Files {
   id         Int      @id @default(autoincrement())
@@ -207,7 +224,7 @@ model Files {
   status     Status   @default(available)
 
   lecture_id Int
-  lecture Lectures @relation(fields: [lecture_id],references: [id])
+  lecture    Lectures @relation(fields: [lecture_id], references: [id])
 }
 
 // Table log_exc_history {
