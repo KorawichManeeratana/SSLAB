@@ -3,30 +3,26 @@ import { execFile } from 'node:child_process'
 import { mkdtemp, writeFile, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import type { RunOutput } from '@/type/grading'
+import { STATUS_CODES } from 'node:http'
+import type { RunOutput, HttpRunOutput } from '@/type/grading'
 
 const TIMEOUT_SEC = 10
 
-export type QueryProblem = {
-  name: string
-  schema: string
-  seed: string
-  solution: string
-  orderMatters: boolean
-}
+// ไฟล์ที่จะเขียนลงโฟลเดอร์ชั่วคราว แล้ว mount เข้า container แบบอ่านอย่างเดียว
+type SandboxFile = { name: string; content: string; mountTo: string }
 
-
-export async function runQuerySubmission(code: string, problem: QueryProblem) {
+async function runInSandbox(files: SandboxFile[], command: string[]) {
   // สร้างโฟลเดอร์ชั่วคราวแยกต่อการส่งแต่ละครั้ง
   const dir = await mkdtemp(path.join(os.tmpdir(), 'sslab-'))
 
   try {
-    const studentFile = path.join(dir, 'query.js')
-    const problemFile = path.join(dir, 'problem.json')
-    await writeFile(studentFile, code, 'utf8')
-    await writeFile(problemFile, JSON.stringify(problem), 'utf8')
+    const mounts: string[] = []
+    for (const f of files) {
+      const hostPath = path.join(dir, f.name)
+      await writeFile(hostPath, f.content, 'utf8')
+      mounts.push('-v', `${hostPath}:${f.mountTo}:ro`)
+    }
 
-    // argument เหมือนใน .bat ทุกตัว
     const args = [
       'run', '--rm',
       '--memory=256m', '--memory-swap=256m',
@@ -35,12 +31,11 @@ export async function runQuerySubmission(code: string, problem: QueryProblem) {
       '--network=none',
       '--read-only', '--tmpfs', '/tmp',
       '--security-opt', 'no-new-privileges',
-      '-v', `${studentFile}:/app/student/query.js:ro`,
-      '-v', `${problemFile}:/app/tests/query-problem.json:ro`,
+      ...mounts,
       'sslab-runner',
       'timeout', '-s', 'KILL', String(TIMEOUT_SEC),
       'node', '--disable-warning=ExperimentalWarning',
-      'harness/run-query.js', 'student/query.js', 'tests/query-problem.json',
+      ...command,
     ]
 
     const { stdout, stderr, exitCode } = await new Promise<{ stdout: string; stderr: string; exitCode: number }>(
@@ -64,13 +59,77 @@ export async function runQuerySubmission(code: string, problem: QueryProblem) {
         ok: false,
         status: 'SYSTEM_ERROR',
         systemError: 'Harness does not return JSON back... (In gradingService)',
-        detail: stderr.slice(0, 500),   // เช่น "error during connect ... docker daemon"
+        detail: stderr.slice(0, 500),
       }
     }
   } finally {
     // ลบไฟล์ชั่วคราวทุกครั้ง ไม่ว่าจะผ่านหรือ error
     await rm(dir, { recursive: true, force: true })
   }
+}
+
+// ---------- QUERY ----------
+export type QueryProblem = {
+  name: string
+  schema: string
+  seed: string
+  solution: string
+  orderMatters: boolean
+}
+
+export function runQuerySubmission(code: string, problem: QueryProblem) {
+  return runInSandbox(
+    [
+      { name: 'query.js', content: code, mountTo: '/app/student/query.js' },
+      { name: 'problem.json', content: JSON.stringify(problem), mountTo: '/app/tests/query-problem.json' },
+    ],
+    ['harness/run-query.js', 'student/query.js', 'tests/query-problem.json'],
+  )
+}
+
+// ---------- HTTP ----------
+type TestcaseRow = {
+  case_name: string
+  method: string
+  path: string
+  body: unknown
+  expected_status: number
+  expected_body: unknown
+}
+
+// แปลงแถว Testcase จาก DB ให้เป็นรูปแบบที่ run-http.js อ่านได้
+export function toHttpProblem(exercise: {
+  exc_name: string
+  exc_schema: string
+  exc_seed: string
+  testcases: TestcaseRow[]
+}) {
+  return {
+    name: exercise.exc_name,
+    schema: exercise.exc_schema,
+    seed: exercise.exc_seed,
+    cases: exercise.testcases.map((tc) => ({
+      name: tc.case_name,
+      method: tc.method,
+      path: tc.path,
+      // null ต้องไม่ส่งไป: GET ที่มี body จะ error และ expect.body = null จะไปเทียบกับ null
+      ...(tc.body != null ? { body: tc.body } : {}),
+      expect: {
+        status: tc.expected_status,
+        ...(tc.expected_body != null ? { body: tc.expected_body } : {}),
+      },
+    })),
+  }
+}
+
+export function runHttpSubmission(code: string, problem: ReturnType<typeof toHttpProblem>) {
+  return runInSandbox(
+    [
+      { name: 'app.js', content: code, mountTo: '/app/student/app.js' },
+      { name: 'problem.json', content: JSON.stringify(problem), mountTo: '/app/tests/http-problem.json' },
+    ],
+    ['harness/run-http.js', 'student/app.js', 'tests/http-problem.json'],
+  )
 }
 
 
@@ -112,5 +171,31 @@ export function toRunOutput(result: any, durationMs: number): RunOutput {
     durationMs,
     rowCount: typeof c?.actualRows === 'number' ? c.actualRows : undefined,
     body: c?.actual,
+  }
+}
+
+export function toHttpRunOutput(result: any, durationMs: number): HttpRunOutput {
+  if (result?.status === 'TLE') {
+    return { kind: 'http', durationMs, status: 504, statusText: 'Gateway Timeout',
+             error: 'Execution exceeded the time limit (10s)', cases: [], logs: [] }
+  }
+  if (!result?.ok) {
+    return { kind: 'http', durationMs, status: 503, statusText: 'Service Unavailable',
+             error: 'ระบบตรวจงานขัดข้อง กรุณาลองใหม่', cases: [], logs: [] }
+  }
+
+  return {
+    kind: 'http',
+    durationMs,
+    logs: result.logs ?? [],
+    cases: (result.cases ?? []).map((c: any) => ({
+      name: c.name,
+      request: c.request ?? { method: '?', path: '' },
+      status: c.status,
+      statusText: typeof c.status === 'number' ? STATUS_CODES[c.status] ?? '' : undefined,
+      body: c.body,
+      // ไม่มี status แปลว่าไม่ได้คำตอบ: ใช้ error หรือ reason ("No response within 2000 ms")
+      error: c.error ?? (c.status === undefined ? c.reason : undefined),
+    })),
   }
 }

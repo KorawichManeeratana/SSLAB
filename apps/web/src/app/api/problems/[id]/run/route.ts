@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getExerciseForGrading } from '../../../../repositories/exercise.repository'
-import { runQuerySubmission, toRunOutput } from '@/app/services/gradingService'
+import { runQuerySubmission, runHttpSubmission, toHttpProblem, toRunOutput, toHttpRunOutput } from '@/app/services/gradingService'
 
 export const runtime = 'nodejs'
 
@@ -31,6 +31,10 @@ export async function POST(
         return NextResponse.json({ error: 'ไม่พบโจทย์' }, { status: 404 })
     }
 
+    if (exercise.exc_engine === 'HTTP') {
+        const result = await runHttpSubmission(code, toHttpProblem(exercise))
+        return NextResponse.json(toHttpRunOutput(result, Date.now() - startedAt))
+    }
 
     const result = await runQuerySubmission(code, {
         name: exercise.exc_name,
@@ -39,7 +43,6 @@ export async function POST(
         solution: exercise.exc_solution,
         orderMatters: exercise.order_matters,
     })
-
 
     return NextResponse.json(toRunOutput(result, Date.now() - startedAt))
 }

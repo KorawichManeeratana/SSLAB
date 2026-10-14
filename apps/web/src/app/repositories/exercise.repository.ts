@@ -22,10 +22,23 @@ export function getExerciseForGrading(id: number) {
     where: { id },
     select: {
       exc_name: true,
+      exc_engine: true,
       exc_schema: true,
       exc_seed: true,
       exc_solution: true,
       order_matters: true,
+      // โจทย์ QUERY จะได้ [] เพราะไม่มี testcase
+      testcases: {
+        orderBy: { sort_order: 'asc' },
+        select: {
+          case_name: true,
+          method: true,
+          path: true,
+          body: true,
+          expected_status: true,
+          expected_body: true,
+        },
+      },
     },
   })
 }

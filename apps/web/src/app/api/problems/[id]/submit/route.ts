@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getExerciseForGrading } from '@/app/repositories/exercise.repository'
 import { createSubmission } from '@/app/repositories/submission.repository'
-import { runQuerySubmission, toVerdict, toScore } from '@/app/services/gradingService'
+import { runQuerySubmission, runHttpSubmission, toHttpProblem, toRunOutput, toHttpRunOutput, toScore, toVerdict } from '@/app/services/gradingService'
 import { getCurrentUserId } from '@/lib/current-user'
 
 export const runtime = 'nodejs'
@@ -22,24 +22,27 @@ export async function POST(
   const body = await req.json().catch(() => null)
   const code = body?.code
   if (typeof code !== 'string' || code.length === 0 || code.length > 50_000) {
-    return NextResponse.json({ error: 'code ไม่ถูกต้อง' }, { status: 400 })
+    return NextResponse.json({ error: 'Incorrect Code' }, { status: 400 })
   }
 
   const exercise = await getExerciseForGrading(exerciseId)
   if (!exercise) {
-    return NextResponse.json({ error: 'ไม่พบโจทย์' }, { status: 404 })
+    return NextResponse.json({ error: 'Problems Not Found' }, { status: 404 })
   }
 
   console.log("Ex:", exercise)
 
   const startedAt = Date.now()
-  const result = await runQuerySubmission(code, {
-    name: exercise.exc_name,
-    schema: exercise.exc_schema,
-    seed: exercise.exc_seed,
-    solution: exercise.exc_solution,
-    orderMatters: exercise.order_matters,
-  })
+
+  const result = exercise.exc_engine === 'HTTP'
+    ? await runHttpSubmission(code, toHttpProblem(exercise))
+    : await runQuerySubmission(code, {
+      name: exercise.exc_name,
+      schema: exercise.exc_schema,
+      seed: exercise.exc_seed,
+      solution: exercise.exc_solution,
+      orderMatters: exercise.order_matters,
+    })
   const execTimeMs = Date.now() - startedAt
 
   const verdict = toVerdict(result)

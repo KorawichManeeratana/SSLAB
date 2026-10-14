@@ -6,6 +6,7 @@ import { ResultPanel } from "./ResultPanel";
 import { DatabaseExplorer } from "./databaseExplorer";
 import { DbExplorerData } from "@/type/db-explorer";
 import { useRouter } from 'next/navigation'
+import type { RunOutput, HttpRunOutput } from '@/type/grading'
 
 type Props = {
     exerciseId: number
@@ -17,6 +18,7 @@ type Props = {
 export default function ProblemWorkspace({ exerciseId, starterCode, explorer }: Props) {
     const [code, setCode] = useState(starterCode ?? '')
     const [result, setResult] = useState<any>(null)
+    const [runOutput, setRunOutput] = useState<RunOutput | HttpRunOutput | null>(null)
     const [running, setRunning] = useState<null | 'run' | 'submit'>(null)
     const router = useRouter()
 
@@ -94,7 +96,7 @@ export default function ProblemWorkspace({ exerciseId, starterCode, explorer }: 
                     {!running && result?.data?.error && !result.data.status && (
                         <p className="text-red-400">{result.data.error}</p>
                     )}
-                    {!running && result?.kind === 'run' && result.data.status && <RunPanel output={result.data} />}
+                    {!running && result?.kind === 'run' && (result.data.status || result.data.kind === 'http') && <RunPanel output={result.data} />}
                     {!running && result?.kind === 'submit' && !result.data.error && <ResultPanel data={result.data} running={null} />}
                 </div>
             </section>

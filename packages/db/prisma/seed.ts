@@ -384,6 +384,176 @@ const ADVANCED_LECTURES = [
   },
 ] as const
 
+// ---------------------------------------------------------------------------
+// HTTP exercises: learners write Express routes, graded by harness/run-http.js
+// Each test case sends one request; Run and Submit both use every case.
+// ---------------------------------------------------------------------------
+const HTTP_STARTER_CODE = `module.exports = function register(app, db) {
+  // app is an Express app (express.json() is already enabled)
+  // db is a node:sqlite DatabaseSync instance
+  app.get('/api/example', (req, res) => {
+    res.json([])
+  })
+}
+`
+
+const BOOKSTORE_SCHEMA =
+  'CREATE TABLE book (id INTEGER PRIMARY KEY, title TEXT NOT NULL, price INTEGER NOT NULL, stock INTEGER NOT NULL);'
+
+const BOOKSTORE_SEED =
+  'INSERT INTO book VALUES ' +
+  "(1,'Node Basics',350,5)," +
+  "(2,'Express in Action',450,0)," +
+  "(3,'Prisma Deep Dive',600,3)," +
+  "(4,'SQL 101',200,10)," +
+  "(5,'JavaScript Tips',480,2)," +
+  "(6,'Docker for Devs',520,0);"
+
+const HTTP_LECTURES = [
+  {
+    lecture_name: 'Building REST APIs',
+    lecture_week: '6',
+    exercises: [
+      {
+        exc_name: 'GET /api/books with a Price Filter',
+        exc_difficulty: 'adept',
+        exc_description:
+          'Write an Express route GET /api/books that accepts a query parameter maxPrice. ' +
+          'Respond with status 200 and a JSON array of the books priced below maxPrice that still have stock (stock greater than 0). ' +
+          'Each item must contain only id, title and price, sorted by price from lowest to highest. ' +
+          'If maxPrice is missing or is not a number, respond with status 400.',
+        testcases: [
+          {
+            case_name: 'returns in-stock books under 500, cheapest first',
+            method: 'GET',
+            path: '/api/books?maxPrice=500',
+            expected_status: 200,
+            expected_body: [
+              { id: 4, title: 'SQL 101', price: 200 },
+              { id: 1, title: 'Node Basics', price: 350 },
+              { id: 5, title: 'JavaScript Tips', price: 480 },
+            ],
+          },
+          {
+            case_name: 'returns an empty array when nothing matches',
+            method: 'GET',
+            path: '/api/books?maxPrice=100',
+            expected_status: 200,
+            expected_body: [],
+          },
+          {
+            case_name: 'rejects a non-numeric maxPrice with 400',
+            method: 'GET',
+            path: '/api/books?maxPrice=abc',
+            expected_status: 400,
+          },
+          {
+            case_name: 'works with a different maxPrice',
+            method: 'GET',
+            path: '/api/books?maxPrice=400',
+            expected_status: 200,
+            expected_body: [
+              { id: 4, title: 'SQL 101', price: 200 },
+              { id: 1, title: 'Node Basics', price: 350 },
+            ],
+          },
+          {
+            case_name: 'rejects a missing maxPrice with 400',
+            method: 'GET',
+            path: '/api/books',
+            expected_status: 400,
+          },
+        ],
+      },
+      {
+        exc_name: 'GET /api/books/:id',
+        exc_difficulty: 'adept',
+        exc_description:
+          'Write an Express route GET /api/books/:id that returns a single book. ' +
+          'If the book exists, respond with status 200 and a JSON object with the fields id, title, price and stock. ' +
+          'If no book has that id, respond with status 404. ' +
+          'If the id is not a whole number, respond with status 400.',
+        testcases: [
+          {
+            case_name: 'returns an existing book',
+            method: 'GET',
+            path: '/api/books/4',
+            expected_status: 200,
+            expected_body: { id: 4, title: 'SQL 101', price: 200, stock: 10 },
+          },
+          {
+            case_name: 'responds 404 when the book does not exist',
+            method: 'GET',
+            path: '/api/books/999',
+            expected_status: 404,
+          },
+          {
+            case_name: 'responds 400 when the id is not a number',
+            method: 'GET',
+            path: '/api/books/abc',
+            expected_status: 400,
+          },
+          {
+            case_name: 'returns a different existing book',
+            method: 'GET',
+            path: '/api/books/2',
+            expected_status: 200,
+            expected_body: { id: 2, title: 'Express in Action', price: 450, stock: 0 },
+          },
+        ],
+      },
+      {
+        exc_name: 'POST /api/books',
+        exc_difficulty: 'expert',
+        exc_description:
+          'Write an Express route POST /api/books that adds a new book. The request body is JSON with the fields title, price and stock. ' +
+          'Validate the input: title must be a non-empty string, and price and stock must be whole numbers that are 0 or greater. ' +
+          'If the input is invalid, respond with status 400 and do not insert anything. ' +
+          'Otherwise insert the book and respond with status 201 and the created book as a JSON object with the fields id, title, price and stock.',
+        testcases: [
+          {
+            case_name: 'creates a book and returns it with its new id',
+            method: 'POST',
+            path: '/api/books',
+            body: { title: 'Clean APIs', price: 390, stock: 4 },
+            expected_status: 201,
+            expected_body: { id: 7, title: 'Clean APIs', price: 390, stock: 4 },
+          },
+          {
+            case_name: 'rejects a missing title with 400',
+            method: 'POST',
+            path: '/api/books',
+            body: { price: 390, stock: 4 },
+            expected_status: 400,
+          },
+          {
+            case_name: 'rejects a negative price with 400',
+            method: 'POST',
+            path: '/api/books',
+            body: { title: 'Broken Book', price: -10, stock: 1 },
+            expected_status: 400,
+          },
+          {
+            case_name: 'accepts a book with zero stock',
+            method: 'POST',
+            path: '/api/books',
+            body: { title: 'Coming Soon', price: 500, stock: 0 },
+            expected_status: 201,
+            expected_body: { id: 7, title: 'Coming Soon', price: 500, stock: 0 },
+          },
+          {
+            case_name: 'rejects a non-numeric stock with 400',
+            method: 'POST',
+            path: '/api/books',
+            body: { title: 'Odd Book', price: 100, stock: 'many' },
+            expected_status: 400,
+          },
+        ],
+      },
+    ],
+  },
+] as const
+
 async function main() {
   // 1) Clear old data (children before parents to satisfy foreign keys)
   await prisma.user_exercise.deleteMany()
@@ -455,6 +625,7 @@ async function main() {
       const created = await prisma.exercises.create({
         data: {
           ...ex,
+          exc_engine: 'QUERY',
           exc_anwser_field: STARTER_CODE,
           exc_status: 'available',
           exc_type: 'practice',
@@ -466,12 +637,55 @@ async function main() {
     }
   }
 
+  // 6) HTTP lectures + exercises + test cases
+  let testcaseCount = 0
+
+  for (const lec of HTTP_LECTURES) {
+    const lecture = await prisma.lectures.create({
+      data: {
+        lecture_name: lec.lecture_name,
+        lecture_week: lec.lecture_week,
+        course_id: course.id,
+      },
+    })
+
+    for (const ex of lec.exercises) {
+      const { testcases, ...exercise } = ex
+      const created = await prisma.exercises.create({
+        data: {
+          ...exercise,
+          exc_engine: 'HTTP',
+          exc_schema: BOOKSTORE_SCHEMA,
+          exc_seed: BOOKSTORE_SEED,
+          exc_solution: '', // not used by HTTP exercises (expected results live in Testcase)
+          order_matters: true,
+          exc_anwser_field: HTTP_STARTER_CODE,
+          exc_status: 'available',
+          exc_type: 'practice',
+          lecture_id: lecture.id,
+          author_id: teacher.id,
+        },
+      })
+      exerciseIds.push(created.id)
+
+      await prisma.testcase.createMany({
+        data: testcases.map((tc, i) => ({
+          ...tc,
+          sort_order: i + 1,
+          exercise_id: created.id,
+        })),
+      })
+      testcaseCount += testcases.length
+    }
+  }
+
   console.log('Seed completed')
   console.log({
     teacher: teacher.id,
     student: student.id,
     course: course.id,
     exercises: exerciseIds,
+    testcases: testcaseCount,
   })
 }
 
