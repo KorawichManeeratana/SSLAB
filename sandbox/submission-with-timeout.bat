@@ -15,11 +15,11 @@ set TIMEOUT_SEC=10
 
 REM เลือกไฟล์ harness และ path ของไฟล์นักศึกษาและโจทย์ตาม engine
 if /i "%ENGINE%"=="http" (
-  set HARNESS=harness/run-tests.js
+  set HARNESS=harness/run-http.js
+  set STUDENT=fixtures\student\app-throws.js
   set DEST=/app/student/app.js
-  set STUDENT_IN=fixtures/student/app.js
-  set PROBLEM_IN=tests/problem1.json
-  set PROBLEM_DEST=/app/tests/problem1.json
+  set STUDENT_IN=student/app.js
+  set PROBLEM_IN=tests/http-problem.json
 ) else if /i "%ENGINE%"=="query" (
   set HARNESS=harness/run-query.js
   set STUDENT=fixtures/student/query-wrong.js

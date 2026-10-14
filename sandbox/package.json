@@ -1,8 +1,8 @@
 {
   "name": "sslab-runner",
   "private": true,
-  "description": "SSLAB sandbox runner image - Node + Express + test harness",
+  "description": "Dependencies available to student code inside the sandbox (installed at image build time; the container has no network).",
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "5.3.0"
   }
 }

@@ -1,0 +1,31 @@
+{
+  "name": "GET /api/books with a maxPrice filter",
+  "schema": "CREATE TABLE book (id INTEGER PRIMARY KEY, title TEXT NOT NULL, price INTEGER NOT NULL, stock INTEGER NOT NULL);",
+  "seed": "INSERT INTO book VALUES (1,'Node Basics',350,5),(2,'Express in Action',450,0),(3,'Prisma Deep Dive',600,3),(4,'SQL 101',200,10),(5,'JavaScript Tips',480,2),(6,'Docker for Devs',520,0);",
+  "cases": [
+    {
+      "name": "returns in-stock books under 500, cheapest first",
+      "method": "GET",
+      "path": "/api/books?maxPrice=500",
+      "expect": { "status": 200, "query": "SELECT id, title, price FROM book WHERE price < 500 AND stock > 0 ORDER BY price ASC" }
+    },
+    {
+      "name": "works with a different maxPrice",
+      "method": "GET",
+      "path": "/api/books?maxPrice=400",
+      "expect": { "status": 200, "query": "SELECT id, title, price FROM book WHERE price < 400 AND stock > 0 ORDER BY price ASC" }
+    },
+    {
+      "name": "returns an empty array when nothing matches",
+      "method": "GET",
+      "path": "/api/books?maxPrice=100",
+      "expect": { "status": 200, "body": [] }
+    },
+    {
+      "name": "rejects a non-numeric maxPrice with 400",
+      "method": "GET",
+      "path": "/api/books?maxPrice=abc",
+      "expect": { "status": 400 }
+    }
+  ]
+}
