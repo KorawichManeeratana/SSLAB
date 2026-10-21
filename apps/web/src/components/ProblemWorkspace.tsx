@@ -7,15 +7,25 @@ import { DatabaseExplorer } from "./databaseExplorer";
 import { DbExplorerData } from "@/type/db-explorer";
 import { useRouter } from 'next/navigation'
 import type { RunOutput, HttpRunOutput } from '@/type/grading'
+import type { GradingEngine } from '@/type/grading'
+
 
 type Props = {
     exerciseId: number
     starterCode: string
     explorer: DbExplorerData | null
+    engine: GradingEngine
 }
 
 
-export default function ProblemWorkspace({ exerciseId, starterCode, explorer }: Props) {
+const ENGINE_UI: Record<GradingEngine, { runLabel: string; fileName: string; hint?: string }> = {
+    QUERY: { runLabel: 'RUN_QUERY', fileName: 'query.js' },
+    HTTP: { runLabel: 'SEND_REQUESTS', fileName: 'app.js', hint: 'server restarts on run' },
+}
+
+
+export default function ProblemWorkspace({ exerciseId, starterCode, explorer, engine }: Props) {
+    const ui = ENGINE_UI[engine]
     const [code, setCode] = useState(starterCode ?? '')
     const [result, setResult] = useState<any>(null)
     const [runOutput, setRunOutput] = useState<RunOutput | HttpRunOutput | null>(null)
@@ -56,9 +66,11 @@ export default function ProblemWorkspace({ exerciseId, starterCode, explorer }: 
                             Editor
                         </h2>
                         <div className="flex items-center gap-3">
-                            <span className="hidden md:inline font-mono text-[10px] uppercase tracking-[0.18em] text-muted/70">server restarts on run</span>
+                            {ui.hint && (
+                                <span className="hidden md:inline font-mono text-[10px] uppercase tracking-[0.18em] text-muted/70">{ui.hint}</span>
+                            )}
                             <button className="run-button" onClick={() => send('run')} disabled={running !== null}>
-                                {running ? 'RUNNING...' : <>&#9656; RUN_QUERY</>}
+                                {running ? 'RUNNING...' : <>&#9656; {ui.runLabel}</>}
                             </button>
                             <button className="run-button" onClick={() => send('submit')} disabled={running !== null}>
                                 {running === 'submit' ? 'SUBMITTING...' : 'SUBMIT'}
@@ -68,7 +80,7 @@ export default function ProblemWorkspace({ exerciseId, starterCode, explorer }: 
 
                     <div className="flex items-stretch gap-1 px-2 pt-2 font-mono text-[11px] bg-surface-2 border-b border-ink/10"> {/* ต้องแก้ตามหน้าโจทย์ */}
                         <span className="-mb-px px-3 py-2 rounded-t-[6px] border border-b-0 border-ink/10 bg-surface text-accent-cyan font-bold">
-                            routes/employees.js
+                            {ui.fileName}
                         </span>
                     </div>
 
@@ -91,7 +103,7 @@ export default function ProblemWorkspace({ exerciseId, starterCode, explorer }: 
                     <h2 className="panel-title">Result</h2>
                 </div>
                 <div className="panel-content">
-                    {running && <p className="text-muted">{running === 'submit' ? 'กำลังส่งและตรวจ...' : 'กำลังรัน...'}</p>}
+                    {running && <p className="text-muted">{running === 'submit' ? 'Grading...' : 'RUNNING...'}</p>}
                     {!running && !result && <p className="text-muted">กด RUN เพื่อดูผลลัพธ์ หรือ SUBMIT เพื่อส่งตรวจ</p>}
                     {!running && result?.data?.error && !result.data.status && (
                         <p className="text-red-400">{result.data.error}</p>

@@ -13,6 +13,18 @@ export function getExerciseById(id: number) {
       exc_description: true,
       exc_schema: true,
       exc_anwser_field: true,
+      exc_engine: true,
+      testcases: {
+        orderBy: { sort_order: 'asc' },
+        take: 1,
+        select: {
+          method: true,
+          path: true,
+          body: true,
+          expected_status: true,
+          expected_body: true,
+        },
+      },
     },
   })
 }
@@ -37,6 +49,7 @@ export function getExerciseForGrading(id: number) {
           body: true,
           expected_status: true,
           expected_body: true,
+          order_matters: true,
         },
       },
     },

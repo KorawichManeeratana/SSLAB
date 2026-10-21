@@ -95,6 +95,7 @@ type TestcaseRow = {
   body: unknown
   expected_status: number
   expected_body: unknown
+  order_matters: boolean
 }
 
 // แปลงแถว Testcase จาก DB ให้เป็นรูปแบบที่ run-http.js อ่านได้
@@ -117,6 +118,7 @@ export function toHttpProblem(exercise: {
       expect: {
         status: tc.expected_status,
         ...(tc.expected_body != null ? { body: tc.expected_body } : {}),
+        orderMatters: tc.order_matters,
       },
     })),
   }
@@ -151,12 +153,16 @@ export function toRunOutput(result: any, durationMs: number): RunOutput {
   const request = { method: 'CALL', target: 'solve(db)' }
 
   if (result?.status === 'TLE') {
-    return { request, status: 504, statusText: 'Gateway Timeout', durationMs,
-             error: 'Execution exceeded the time limit (10s)' }
+    return {
+      request, status: 504, statusText: 'Gateway Timeout', durationMs,
+      error: 'Execution exceeded the time limit (10s)'
+    }
   }
   if (!result?.ok) {
-    return { request, status: 503, statusText: 'Service Unavailable', durationMs,
-             error: 'ระบบตรวจงานขัดข้อง กรุณาลองใหม่' }
+    return {
+      request, status: 503, statusText: 'Service Unavailable', durationMs,
+      error: 'ระบบตรวจงานขัดข้อง กรุณาลองใหม่'
+    }
   }
 
   const c = result.cases?.[0]
@@ -176,12 +182,16 @@ export function toRunOutput(result: any, durationMs: number): RunOutput {
 
 export function toHttpRunOutput(result: any, durationMs: number): HttpRunOutput {
   if (result?.status === 'TLE') {
-    return { kind: 'http', durationMs, status: 504, statusText: 'Gateway Timeout',
-             error: 'Execution exceeded the time limit (10s)', cases: [], logs: [] }
+    return {
+      kind: 'http', durationMs, status: 504, statusText: 'Gateway Timeout',
+      error: 'Execution exceeded the time limit (10s)', cases: [], logs: []
+    }
   }
   if (!result?.ok) {
-    return { kind: 'http', durationMs, status: 503, statusText: 'Service Unavailable',
-             error: 'ระบบตรวจงานขัดข้อง กรุณาลองใหม่', cases: [], logs: [] }
+    return {
+      kind: 'http', durationMs, status: 503, statusText: 'Service Unavailable',
+      error: 'ระบบตรวจงานขัดข้อง กรุณาลองใหม่', cases: [], logs: []
+    }
   }
 
   return {

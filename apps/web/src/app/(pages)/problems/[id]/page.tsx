@@ -7,7 +7,9 @@ import { getLatestCode } from '@/app/repositories/submission.repository';
 import { getExerciseForGrading } from '../../../repositories/exercise.repository';
 import { computeExpectedOutput } from '../../../services/expectedOutput.services';
 import { buildDbExplorer } from '../../../services/dbExplorerServices'
+import { ExampleCase } from '@/components/ExampleCase'
 import type { DbExplorerData } from '@/type/db-explorer'
+
 
 
 
@@ -29,7 +31,8 @@ export default async function ProblemPage({
     const grading = await getExerciseForGrading(exercise.id)
     let expectedOutput: unknown[] | null = null
     try {
-        expectedOutput = grading
+        // คำนวณจากคำสั่งเฉลยเฉพาะโจทย์ QUERY โจทย์ HTTP ไม่มี exc_solution
+        expectedOutput = grading && grading.exc_engine === 'QUERY'
             ? computeExpectedOutput(grading.exc_schema, grading.exc_seed, grading.exc_solution)
             : null
     } catch {
@@ -90,28 +93,33 @@ export default async function ProblemPage({
                             </p>
                         </div> */}
 
-                        <div className="space-y-2">
-                            <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted/70">Expected response</h4>
-                            <div className="font-mono text-[11px] leading-relaxed bg-ink/5 border border-ink/5 rounded-[8px] p-3 text-muted overflow-x-auto">
-                                <div><span className="status-badge status-pass">200 OK</span></div>
-                                <div className="pl-3 whitespace-nowrap"> {/* ผลลัพธ์ตัวอย่างในรูปแบบ JSON */}
-                                    {expectedOutput && (
-                                        <div className="space-y-2">
-                                            <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted/70">Expected output</h4>
-                                            <pre className="font-mono text-[11px] leading-relaxed bg-ink/5 border border-ink/5 rounded-[8px] p-3 text-muted overflow-x-auto max-h-64">
-                                                {JSON.stringify(expectedOutput, null, 2)}
-                                            </pre>
-                                        </div>
-                                    )}
+                        {exercise.exc_engine === 'HTTP' ? (
+                            exercise.testcases[0] && <ExampleCase example={exercise.testcases[0]} />
+                        ) : (
+                            <div className="space-y-2">
+                                <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted/70">Expected response</h4>
+                                <div className="font-mono text-[11px] leading-relaxed bg-ink/5 border border-ink/5 rounded-[8px] p-3 text-muted overflow-x-auto">
+                                    <div><span className="status-badge status-pass">200 OK</span></div>
+                                    <div className="pl-3 whitespace-nowrap">
+                                        {expectedOutput && (
+                                            <div className="space-y-2">
+                                                <h4 className="font-mono text-[10px] uppercase tracking-[0.2em] text-muted/70">Expected output</h4>
+                                                <pre className="font-mono text-[11px] leading-relaxed bg-ink/5 border border-ink/5 rounded-[8px] p-3 text-muted overflow-x-auto max-h-64">
+                                                    {JSON.stringify(expectedOutput, null, 2)}
+                                                </pre>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </aside>
             <ProblemWorkspace
                 exerciseId={exercise.id}
                 starterCode={latestCode ?? exercise.exc_anwser_field ?? ''}
+                engine={exercise.exc_engine}
                 explorer={explorer}
             />
         </main>
