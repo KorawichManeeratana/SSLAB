@@ -34,3 +34,5 @@ export type Verdict =
   | 'MLE'
   | 'RUNTIME_ERROR'
   | 'SYSTEM_ERROR'
+
+export type GradingEngine = 'QUERY' | 'HTTP'
