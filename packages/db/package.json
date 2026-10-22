@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@prisma/client": "6.19.3",
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "lucide-react": "^1.61.0"
   },
   "devDependencies": {
     "prisma": "6.19.3",

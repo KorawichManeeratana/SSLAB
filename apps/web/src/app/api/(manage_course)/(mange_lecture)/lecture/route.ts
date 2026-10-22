@@ -2,11 +2,11 @@ import { LectureRepository } from "@/app/repositories/LectureRepository"
 import { LectureService } from "@/app/services/LectureService"
 import { NextResponse } from "next/server"
 
+const lectureRepository = new LectureRepository()
+const lectureService = new LectureService(lectureRepository)
 
 export async function GET() {
     try {
-        const lectureRepository = new LectureRepository()
-        const lectureService = new LectureService(lectureRepository)
         const lecture = await lectureService.getLecture()
         return NextResponse.json(lecture)
     } catch (err) {
@@ -14,3 +14,11 @@ export async function GET() {
     }
 
 }
+
+// export async function PUT() {
+//     try {
+        
+//     } catch (err) {
+
+//     }   
+// }
