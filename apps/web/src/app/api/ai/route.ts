@@ -62,9 +62,19 @@ export async function POST(req: NextRequest) {
       abortSignal: req.signal,
     });
 
-    return result.toTextStreamResponse();
+    console.log('AI response:', result.feedback);
+    console.log('AI usage:', result.usage);
+    console.log('AI finish reason:', result.finishReason);
 
+    return NextResponse.json({
+      feedback: result.feedback,
+    });
   } catch (error) {
-    return NextResponse.json({ error: "AiReview Response fail" }, { status: 500 })
+    console.error('AI review failed:', error);
+
+    return NextResponse.json(
+      { error: 'ไม่สามารถสร้างคำแนะนำได้ กรุณาลองอีกครั้ง' },
+      { status: 500 },
+    );
   }
 }

@@ -8,7 +8,7 @@ import { DbExplorerData } from "@/type/db-explorer";
 import { useRouter } from 'next/navigation'
 import type { RunOutput, HttpRunOutput } from '@/type/grading'
 import type { GradingEngine } from '@/type/grading'
-
+import AIReviewButton from "./AiReview";
 
 type Props = {
     exerciseId: number
@@ -110,6 +110,24 @@ export default function ProblemWorkspace({ exerciseId, starterCode, explorer, en
                     )}
                     {!running && result?.kind === 'run' && (result.data.status || result.data.kind === 'http') && <RunPanel output={result.data} />}
                     {!running && result?.kind === 'submit' && !result.data.error && <ResultPanel data={result.data} running={null} />}
+                </div>
+                <div className="border-t border-ink/10 p-4
+                    [&>div>button]:inline-flex [&>div>button]:min-h-10
+                    [&>div>button]:items-center [&>div>button]:justify-center
+                    [&>div>button]:rounded-[8px] [&>div>button]:border
+                    [&>div>button]:border-accent-cyan/40 [&>div>button]:bg-accent-cyan/10
+                    [&>div>button]:px-4 [&>div>button]:py-2
+                    [&>div>button]:font-mono [&>div>button]:text-xs [&>div>button]:font-semibold
+                    [&>div>button]:text-accent-cyan [&>div>button]:transition-colors
+                    [&>div>button:first-child]:w-full
+                    [&>div>button:enabled:hover]:bg-accent-cyan/20
+                    [&>div>button:enabled]:cursor-pointer
+                    [&>div>button:disabled]:cursor-not-allowed [&>div>button:disabled]:opacity-50
+                    [&>div>button:focus-visible]:outline-2
+                    [&>div>button:focus-visible]:outline-offset-2
+                    [&>div>button:focus-visible]:outline-accent-cyan
+                    [&>div>button+button]:mt-2">
+                    <AIReviewButton exerciseId={exerciseId} code={code} />
                 </div>
             </section>
         </>

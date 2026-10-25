@@ -386,8 +386,8 @@ export default function UniversalAdminPage() {
         </div>
 
         {/* Table View */}
-        <div className="flex-1 px-8 pb-8 overflow-auto">
-          <div className="bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
+        <div className="flex-1 px-8 pb-8 overflow-hidden">
+          <div className="bg-white rounded-lg border border-slate-200 shadow-xs h-full flex flex-col overflow-hidden">
             {isLoading ? (
               <div className="p-12 text-center text-xs text-slate-500">กำลังโหลดข้อมูล...</div>
             ) : filteredData.length === 0 ? (
@@ -395,45 +395,47 @@ export default function UniversalAdminPage() {
                 {searchQuery ? `ไม่พบข้อมูลที่ตรงกับคำค้นหา "${searchQuery}"` : `ยังไม่มีข้อมูลใน ${activeEntity}`}
               </div>
             ) : (
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
-                    <th className="p-3">ID</th>
-                    {currentConfig.fields.map((f) => (
-                      <th key={f.name} className="p-3">{f.label}</th>
-                    ))}
-                    <th className="p-3 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredData.map((row: any) => (
-                    <tr key={row.id} className="hover:bg-slate-50/80 transition">
-                      <td className="p-3 font-mono font-bold text-purple-700">{row.id}</td>
+              <div className="overflow-auto flex-1">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead className="sticky top-0 bg-slate-50 border-b border-slate-200 text-slate-600 font-bold z-10">
+                    <tr>
+                      <th className="p-3 whitespace-nowrap">ID</th>
                       {currentConfig.fields.map((f) => (
-                        <td key={f.name} className="p-3 max-w-xs truncate">
-                          {typeof row[f.name] === 'object' ? JSON.stringify(row[f.name]) : String(row[f.name] ?? '-')}
-                        </td>
+                        <th key={f.name} className="p-3 whitespace-nowrap">{f.label}</th>
                       ))}
-                      <td className="p-3 text-right space-x-2">
-                        <button
-                          onClick={() => handleOpenEditModal(row)}
-                          className="text-slate-400 hover:text-purple-600 p-1 rounded hover:bg-purple-50 transition"
-                          title="แก้ไข"
-                        >
-                          <Edit3 size={15} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(row.id)}
-                          className="text-slate-400 hover:text-rose-600 p-1 rounded hover:bg-rose-50 transition"
-                          title="ลบ"
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </td>
+                      <th className="p-3 text-right whitespace-nowrap">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredData.map((row: any) => (
+                      <tr key={row.id} className="hover:bg-slate-50/80 transition">
+                        <td className="p-3 font-mono font-bold text-purple-700 align-top whitespace-nowrap">{row.id}</td>
+                        {currentConfig.fields.map((f) => (
+                          <td key={f.name} className="p-3 max-w-xs break-words whitespace-normal align-top">
+                            {typeof row[f.name] === 'object' ? JSON.stringify(row[f.name]) : String(row[f.name] ?? '-')}
+                          </td>
+                        ))}
+                        <td className="p-3 text-right space-x-2 align-top whitespace-nowrap">
+                          <button
+                            onClick={() => handleOpenEditModal(row)}
+                            className="text-slate-400 hover:text-purple-600 p-1 rounded hover:bg-purple-50 transition"
+                            title="แก้ไข"
+                          >
+                            <Edit3 size={15} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(row.id)}
+                            className="text-slate-400 hover:text-rose-600 p-1 rounded hover:bg-rose-50 transition"
+                            title="ลบ"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>

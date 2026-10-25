@@ -56,4 +56,21 @@ export function getExerciseForGrading(id: number) {
   })
 }
 
+export function getExerciseForAI(id: number) {
+  return prisma.exercises.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      exc_name: true,
+      exc_description: true,
+      exc_schema: true,
+      exc_anwser_field: true,
+      exc_engine: true,
+      exc_type: true,
+      exc_status: true,
+      order_matters: true,
+    }
+  })
+}
+
 export type ExerciseView = NonNullable<Awaited<ReturnType<typeof getExerciseById>>>
