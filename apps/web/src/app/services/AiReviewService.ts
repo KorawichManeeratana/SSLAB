@@ -1,33 +1,13 @@
 import { generateText } from 'ai';
 import { google } from '@ai-sdk/google';
 import { getExerciseForAI } from '../repositories/exercise.repository';
-
+import { AI_REVIEW_INSTRUCTIONS } from '../prompts/ai-review-prompt';
 type ReviewCodeInput = {
     studentId: number;
     exerciseId: number;
     code: string;
     abortSignal?: AbortSignal;
 };
-
-const SYSTEM_PROMPT = `
-คุณคือ AI Tutor สำหรับช่วยนักศึกษาฝึกเขียนโปรแกรม
-
-หน้าที่ของคุณคือวิเคราะห์โค้ดและให้คำแนะนำ
-ห้ามให้โค้ดคำตอบที่แก้ไขเสร็จแล้ว
-ห้ามเปิดเผยคำตอบสุดท้าย
-อธิบายข้อผิดพลาดเชิงแนวคิดและหัวข้อที่ควรศึกษา
-ตอบเป็นภาษาไทย ไม่เกิน 100 คำ
-
-Focus on one blocking issue per response. If an undefined variable,
-syntax error, or other blocking runtime issue is evident, discuss
-only that issue. Do not continue by outlining the database query
-or the remaining solution.
-
-Give one diagnostic hint and at most two learning topics.
-Use three short Thai lines and stay within 450 characters.
-Do not enumerate the SQL clauses, exact conditions, and ordering
-needed to solve the exercise.
-`;
 
 export class AIReviewService {
 
@@ -64,7 +44,7 @@ export class AIReviewService {
 
         const result = await generateText({
             model: google(modelId),
-            instructions: SYSTEM_PROMPT,
+            instructions: AI_REVIEW_INSTRUCTIONS,
             prompt: JSON.stringify(context),
             maxOutputTokens: 1000,
             maxRetries: 0,
