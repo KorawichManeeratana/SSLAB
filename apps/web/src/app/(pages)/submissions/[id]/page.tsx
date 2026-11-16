@@ -3,12 +3,13 @@ import { notFound } from 'next/navigation'
 import { Header } from '@/components/header'
 import { getCurrentUserId } from '@/lib/current-user'
 import { getSubmissionForView } from '../../../repositories/submission.repository'
+import AIReviewButton from '@/components/AiReview';
 
 const HEADLINE: Record<string, { tag: string; title: string; tone: string }> = {
-  ACCEPTED:      { tag: 'PASSED',  title: 'COMPLETE_',  tone: 'text-accent-cyan' },
-  WRONG_ANSWER:  { tag: 'FAILED',  title: 'INCOMPLETE_', tone: 'text-accent-magenta' },
-  RUNTIME_ERROR: { tag: 'ERROR',   title: 'RUNTIME_ERROR_', tone: 'text-accent-magenta' },
-  TLE:           { tag: 'TIMEOUT', title: 'TIME_LIMIT_', tone: 'text-accent-magenta' },
+  ACCEPTED: { tag: 'PASSED', title: 'COMPLETE_', tone: 'text-accent-cyan' },
+  WRONG_ANSWER: { tag: 'FAILED', title: 'INCOMPLETE_', tone: 'text-accent-magenta' },
+  RUNTIME_ERROR: { tag: 'ERROR', title: 'RUNTIME_ERROR_', tone: 'text-accent-magenta' },
+  TLE: { tag: 'TIMEOUT', title: 'TIME_LIMIT_', tone: 'text-accent-magenta' },
 }
 
 export default async function SubmissionPage({ params }: { params: Promise<{ id: string }> }) {
@@ -81,11 +82,10 @@ export default async function SubmissionPage({ params }: { params: Promise<{ id:
                     </div>
                     {c.error && <p className="font-mono text-[11px] text-red-400 pl-5">{c.error}</p>}
                   </div>
-                  <span className={`px-3 py-1 rounded-full border font-mono text-[10px] tracking-[0.15em] ${
-                    c.pass
-                      ? 'border-green-500/40 text-green-400 bg-green-500/10'
-                      : 'border-red-500/40 text-red-400 bg-red-500/10'
-                  }`}>
+                  <span className={`px-3 py-1 rounded-full border font-mono text-[10px] tracking-[0.15em] ${c.pass
+                    ? 'border-green-500/40 text-green-400 bg-green-500/10'
+                    : 'border-red-500/40 text-red-400 bg-red-500/10'
+                    }`}>
                     {c.pass ? 'CORRECT' : 'WRONG'}
                   </span>
                 </li>
@@ -96,12 +96,43 @@ export default async function SubmissionPage({ params }: { params: Promise<{ id:
 
         {/* ขวา: AI + โค้ด + ปุ่ม */}
         <div className="lg:col-span-5 space-y-6">
-          <section className="panel p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="w-8 h-8 rounded-full border border-ink/20 flex items-center justify-center font-mono text-xs">AI</span>
-              <h2 className="font-display font-bold">AI Code Review</h2>
+          <section className="panel overflow-hidden">
+            <div className="flex items-center gap-3 border-b border-ink/10 bg-surface-2 px-6 py-4">
+              <span
+                aria-hidden="true"
+                className="
+        flex h-9 w-9 shrink-0 items-center justify-center
+        rounded-[10px] border border-accent-cyan/25
+        bg-accent-cyan/10 font-mono text-xs
+        font-bold text-accent-cyan
+      "
+              >
+                AI
+              </span>
+
+              <div>
+                <h2 className="font-display font-bold text-ink">
+                  AI Code Review
+                </h2>
+                <p className="mt-0.5 text-xs text-muted">
+                  คำแนะนำสำหรับการส่งครั้งที่ {sub.attempt_number}
+                </p>
+              </div>
             </div>
-            <p className="text-muted text-sm">ขั้นถัดไป: ปุ่มขอคำแนะนำจาก AI</p>
+
+            <div className="p-6">
+              {sub.exercise.exc_type === 'practice' ? (
+                <AIReviewButton
+                  key={sub.id}
+                  exerciseId={sub.exercise.id}
+                  code={sub.code ?? ''}
+                />
+              ) : (
+                <p className="text-sm leading-6 text-muted">
+                  คำแนะนำจาก AI เปิดให้ใช้งานเฉพาะแบบฝึกหัด
+                </p>
+              )}
+            </div>
           </section>
 
           <section className="panel">

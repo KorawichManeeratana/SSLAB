@@ -60,7 +60,7 @@ export function getSubmissionForView(id: number, userId: number) {
       ai_feedback: true,
       exec_time: true,
       created_at: true,
-      exercise: { select: { id: true, exc_name: true } },
+      exercise: { select: { id: true, exc_name: true, exc_type: true } },
     },
   })
 }
