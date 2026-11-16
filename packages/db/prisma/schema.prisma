@@ -10,6 +10,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Enums
+
 enum Role {
   student
   teacher
@@ -67,6 +69,19 @@ enum HttpMethod {
   DELETE
 }
 
+enum MemberRole {
+  TA
+  Teacher
+}
+
+enum MemberStatus {
+  pending
+  accepted
+  rejected
+}
+
+// Models
+
 model Faculty {
   id       Int    @id @default(autoincrement())
   fac_name String
@@ -80,6 +95,7 @@ model Users {
   last_name     String
   student_code  String
   password      String
+  email         String?
   role          Role     @default(student)
   profile_image String?
   user_status   Status   @default(available)
@@ -92,6 +108,7 @@ model Users {
   exercises    Exercises[]
   userExercise user_exercise[]
   course       Courses[]
+  courseMember course_member[]
 }
 
 model Courses {
@@ -100,10 +117,13 @@ model Courses {
   course_status Status   @default(available)
   created_at    DateTime @default(now())
   creator_id    Int
-  user          Users    @relation(fields: [creator_id], references: [id])
+  slug          String?
 
-  enrolls  Enrolls[]
-  lectures Lectures[]
+  user Users @relation(fields: [creator_id], references: [id])
+
+  enrolls      Enrolls[]
+  lectures     Lectures[]
+  courseMember course_member[]
 }
 
 model Enrolls {
@@ -112,8 +132,7 @@ model Enrolls {
   enroll_status EnrollStatus @default(active)
 
   user_id Int
-
-  user Users @relation(fields: [user_id], references: [id])
+  user    Users @relation(fields: [user_id], references: [id])
 
   course_id Int
   course    Courses @relation(fields: [course_id], references: [id])
@@ -121,10 +140,27 @@ model Enrolls {
   @@unique([user_id, course_id])
 }
 
+model course_member {
+  id          Int          @id @default(autoincrement())
+  course_role MemberRole
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+  status      MemberStatus @default(pending)
+
+  course_id Int
+  course    Courses @relation(fields: [course_id], references: [id])
+
+  user_id Int
+  user    Users @relation(fields: [user_id], references: [id])
+
+  @@unique([user_id, course_id])
+  @@index([course_id])
+}
+
 model Exercises {
-  id             Int    @id @default(autoincrement())
+  id             Int   @id @default(autoincrement())
   exc_name       String
-  exc_difficulty Level  @default(novice)
+  exc_difficulty Level @default(novice)
 
   exc_schema   String
   exc_seed     String
@@ -141,12 +177,10 @@ model Exercises {
   exc_type ExerciseType @default(practice)
 
   lecture_id Int
-
-  lecture Lectures @relation(fields: [lecture_id], references: [id])
+  lecture    Lectures @relation(fields: [lecture_id], references: [id])
 
   author_id Int
-
-  author Users @relation(fields: [author_id], references: [id])
+  author    Users @relation(fields: [author_id], references: [id])
 
   exc_engine GradingEngine @default(QUERY)
 
@@ -155,22 +189,29 @@ model Exercises {
 }
 
 model Testcase {
-  id              Int        @id @default(autoincrement())
-  case_name       String
-  created_at      DateTime   @default(now())
+  id         Int      @id @default(autoincrement())
+  case_name  String
+  created_at DateTime @default(now())
 
-  sort_order      Int        @default(0)      // ลำดับการรัน
-  method          HttpMethod @default(GET)
-  path            String                      // เช่น /api/books?maxPrice=500
-  headers         Json?
-  body            Json?                       // request body (POST/PUT)
+  // ลำดับการรัน
+  sort_order Int        @default(0)
+  method     HttpMethod @default(GET)
 
-  expected_status Int        @default(200)
-  expected_body   Json?                       // ผลที่ต้องได้แบบตายตัว
-  order_matters   Boolean    @default(true)
+  // เช่น /api/books?maxPrice=500
+  path    String
+  headers Json?
 
-  exercise_id     Int
-  exercise        Exercises  @relation(fields: [exercise_id], references: [id])
+  // Request body สำหรับ POST / PUT
+  body Json?
+
+  expected_status Int @default(200)
+
+  // ผลที่ต้องได้แบบตายตัว
+  expected_body Json?
+  order_matters Boolean @default(true)
+
+  exercise_id Int
+  exercise    Exercises @relation(fields: [exercise_id], references: [id])
 
   @@index([exercise_id])
 }
@@ -190,13 +231,12 @@ model user_exercise {
   ai_feedback    String?
   attempt_number Int
   exec_time      Int?
-  user_id        Int
 
-  user Users @relation(fields: [user_id], references: [id])
+  user_id Int
+  user    Users @relation(fields: [user_id], references: [id])
 
   exercise_id Int
-
-  exercise Exercises @relation(fields: [exercise_id], references: [id])
+  exercise    Exercises @relation(fields: [exercise_id], references: [id])
 
   @@index([user_id, exercise_id])
 }
@@ -209,8 +249,7 @@ model Lectures {
   update       DateTime @updatedAt
 
   course_id Int
-
-  course Courses @relation(fields: [course_id], references: [id])
+  course    Courses @relation(fields: [course_id], references: [id])
 
   exercises Exercises[]
   files     Files[]
@@ -218,6 +257,7 @@ model Lectures {
 
 model Files {
   id         Int      @id @default(autoincrement())
+  file_key   String
   file_name  String
   file_size  Int
   created_at DateTime @default(now())
@@ -226,19 +266,3 @@ model Files {
   lecture_id Int
   lecture    Lectures @relation(fields: [lecture_id], references: [id])
 }
-
-// Table log_exc_history {
-//   log_exc_history_id int [pk, increment]
-//   created_at datetime [default: `CURRENT_TIMESTAMP`]
-//   user_exercise_id int [ref: > user_exercise.user_exercise_id]
-// }
-// Table log_exercise_create {
-//   log_exercise_create_id int [pk,  increment]
-//   created_at datetime [default: `CURRENT_TIMESTAMP`]
-//   author_id int [ref: > Exercises.author_id]
-// }
-// Table log_enroll {
-//   log_enroll int [pk,  increment]
-//   created_at datetime [default: `CURRENT_TIMESTAMP`]
-//   enroll_id int [ref: > Enrolls.enroll_id]
-// }

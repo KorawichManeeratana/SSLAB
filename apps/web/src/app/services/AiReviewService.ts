@@ -1,5 +1,5 @@
 import { generateText } from 'ai';
-import { google } from '@ai-sdk/google';
+import { getAIReviewModel } from '@/lib/ai-review-model';
 import { getExerciseForAI } from '../repositories/exercise.repository';
 import { AI_REVIEW_INSTRUCTIONS } from '../prompts/ai-review-prompt';
 type ReviewCodeInput = {
@@ -25,7 +25,7 @@ export class AIReviewService {
         if (exercise.exc_type !== 'practice') {
             throw new Error('AI advice is only available for practice exercises');
         }
-        const modelId = process.env.GOOGLE_MODEL_ID ?? 'gemini-3.6-flash';
+        const aiConfig = getAIReviewModel();
 
 
         const context = {
@@ -43,28 +43,26 @@ export class AIReviewService {
         const modelStartedAt = performance.now();
 
         const result = await generateText({
-            model: google(modelId),
+            model: aiConfig.model,
             instructions: AI_REVIEW_INSTRUCTIONS,
             prompt: JSON.stringify(context),
             maxOutputTokens: 1000,
             maxRetries: 0,
-            providerOptions: {
-                google: {
-                    thinkingConfig: {
-                        thinkingLevel: 'low',
-                    },
-                },
-            },
+            providerOptions: aiConfig.providerOptions,
             abortSignal: input.abortSignal,
         });
 
 
         console.log('AI metrics:', {
-            modelId,
-            thinkingLevel: 'low',
+            provider: aiConfig.provider,
+            requestedModelId: aiConfig.modelId,
+            responseModelId: result.response.modelId,
+            reasoningSetting: aiConfig.reasoningSetting,
+
             databaseMs,
             modelMs: Math.round(performance.now() - modelStartedAt),
             totalMs: Math.round(performance.now() - requestStartedAt),
+
             inputTokens: result.usage.inputTokens,
             outputTokens: result.usage.outputTokens,
             outputTokenDetails: result.usage.outputTokenDetails,
