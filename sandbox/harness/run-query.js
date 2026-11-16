@@ -125,10 +125,12 @@ async function main() {
 
   // รัน query ของนศ. อีกชุด ป้องกันการปนกันกับเฉลย
   let actualans;
+  const stuDb = buildDb(problem);
   try {
-    const stuDb = buildDb(problem);
-    actualans = await student(stuDb);
-    stuDb.close();
+    const raw = await student(stuDb);
+    // แปลงเป็นข้อมูลธรรมดาก่อนปิด db: ถ้า นศ. คืนค่าที่ยังผูกกับ db
+    // (เช่น ลืม .all()) จะได้ค่าที่เทียบได้ หรือ error ในช่วงนี้แทนที่จะไปพังตอนเทียบ
+    actualans = raw === undefined ? undefined : JSON.parse(JSON.stringify(raw));
   } catch (err) {
     return report({
       ok: true,
@@ -136,6 +138,8 @@ async function main() {
       failed: 1,
       cases: [{ pass: false, error: `โค้ดนักศึกษา error: ${err.message}` }],
     });
+  } finally {
+    stuDb.close();
   }
 
   // เทียบผลลัพธ์
